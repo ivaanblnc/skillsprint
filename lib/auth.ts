@@ -29,9 +29,11 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.sub
         const user = await prisma.user.findUnique({
           where: { id: token.sub },
-          select: { role: true, points: true },
+          select: { name: true, email: true, role: true, points: true },
         })
         if (user) {
+          session.user.name = user.name
+          session.user.email = user.email
           session.user.role = user.role
           session.user.points = user.points
         }
@@ -47,7 +49,6 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: "/auth/login",
-    signUp: "/auth/register",
   },
   session: {
     strategy: "jwt",
