@@ -20,6 +20,8 @@ export async function GET(req: NextRequest) {
         email: true,
         role: true,
         points: true,
+        createdAt: true,
+        image: true,
       }
     })
 

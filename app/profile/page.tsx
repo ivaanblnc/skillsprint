@@ -1,13 +1,16 @@
-import { cookies } from "next/headers"
-import { redirect } from "next/navigation"
-import { createServerClient } from "@/lib/supabase/server"
+"use client"
+
+import { useState, useEffect } from "react"
+import { createClient } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Trophy, Mail, User, Calendar, Target, Code2, ArrowLeft, Edit, Save } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Trophy, Mail, User, Calendar, Target, Code2, ArrowLeft, Edit, Save, X, Loader2, CheckCircle, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { DashboardNav } from "@/components/dashboard-nav"
 
@@ -23,50 +26,20 @@ interface UserProfile {
 
 interface UserStats {
   totalChallengesCompleted: number
+  totalChallengesAttempted: number
   totalSubmissions: number
   acceptedSubmissions: number
   averageScore: number
   rank: number
   totalUsers: number
-}
-
-async function getUserProfile(userId: string): Promise<{ user: UserProfile; stats: UserStats } | null> {
-  try {
-    const { prisma } = await import("@/lib/prisma")
-    
-    // Obtener datos del usuario
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        points: true,
-        createdAt: true,
-        image: true,
-      }
-    })
-
-    if (!user) {
-      return null
-    }
-
-    // Por ahora usar datos mock para las estadísticas hasta que las tablas estén listas
-    const stats: UserStats = {
-      totalChallengesCompleted: 12,
-      totalSubmissions: 28,
-      acceptedSubmissions: 19,
-      averageScore: 78,
-      rank: 15,
-      totalUsers: 247
-    }
-
-    return { user, stats }
-  } catch (error) {
-    console.error("Error fetching user profile:", error)
-    return null
-  }
+  recentActivity?: Array<{
+    id: string
+    type: string
+    title: string
+    description: string
+    timeAgo: string
+    color: string
+  }>
 }
 
 function getRoleBadgeVariant(role: string): "default" | "secondary" | "destructive" {
@@ -93,27 +66,154 @@ function getRoleIcon(role: string) {
   }
 }
 
-export default async function ProfilePage() {
-  try {
-    // Verificar autenticación
-    const supabase = await createServerClient()
-    const { data: userData, error } = await supabase.auth.getUser()
-    
-    if (error || !userData?.user) {
-      redirect("/auth/login")
+export default function ProfilePage() {
+  const router = useRouter()
+  const [user, setUser] = useState<UserProfile | null>(null)
+  const [authUser, setAuthUser] = useState<any>(null)
+  const [stats, setStats] = useState<UserStats | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [isEditing, setIsEditing] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [editForm, setEditForm] = useState({
+    name: "",
+    email: ""
+  })
+  const [error, setError] = useState("")
+  const [success, setSuccess] = useState("")
+
+  const successRate = stats && stats.totalSubmissions > 0 
+    ? Math.round((stats.acceptedSubmissions / stats.totalSubmissions) * 100) 
+    : 0
+
+  // Load user data
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const supabase = createClient()
+        const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
+        
+        if (authError || !authUser) {
+          router.push('/auth/login')
+          return
+        }
+
+        setAuthUser(authUser)
+
+        // Fetch user profile and stats from API
+        const [profileResponse, statsResponse] = await Promise.all([
+          fetch('/api/user/profile'),
+          fetch('/api/user/stats')
+        ])
+
+        if (profileResponse.ok) {
+          const userData = await profileResponse.json()
+          setUser(userData)
+          setEditForm({
+            name: userData.name || "",
+            email: userData.email || ""
+          })
+        } else {
+          router.push('/auth/login')
+          return
+        }
+
+        if (statsResponse.ok) {
+          const statsData = await statsResponse.json()
+          setStats(statsData)
+        }
+      } catch (error) {
+        console.error('Error loading user data:', error)
+        router.push('/dashboard')
+      } finally {
+        setLoading(false)
+      }
     }
 
-    // Obtener perfil del usuario
-    const profileData = await getUserProfile(userData.user.id)
-    
-    if (!profileData) {
-      redirect("/auth/login")
+    loadUserData()
+  }, [router])
+
+  const handleEdit = () => {
+    setIsEditing(true)
+    setError("")
+    setSuccess("")
+  }
+
+  const handleCancel = () => {
+    setIsEditing(false)
+    setEditForm({
+      name: user?.name || "",
+      email: user?.email || ""
+    })
+    setError("")
+    setSuccess("")
+  }
+
+  const handleSave = async () => {
+    if (!editForm.name.trim() || !editForm.email.trim()) {
+      setError("Name and email are required")
+      return
     }
 
-    const { user, stats } = profileData
-    const successRate = stats.totalSubmissions > 0 
-      ? Math.round((stats.acceptedSubmissions / stats.totalSubmissions) * 100) 
-      : 0
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editForm.email)) {
+      setError("Please enter a valid email address")
+      return
+    }
+
+    setSaving(true)
+    setError("")
+
+    try {
+      const response = await fetch('/api/user/profile/update', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(editForm)
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setUser(data.user)
+        setIsEditing(false)
+        
+        if (data.needsEmailVerification) {
+          setSuccess("Profile updated successfully! Please check your email to verify your new email address.")
+        } else {
+          setSuccess("Profile updated successfully!")
+        }
+        
+        // Clear success message after 5 seconds
+        setTimeout(() => setSuccess(""), 5000)
+      } else {
+        setError(data.error || "Failed to update profile")
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error)
+      setError("An unexpected error occurred")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <DashboardNav />
+        <main className="container mx-auto px-4 py-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return null
+  }
 
     return (
       <div className="min-h-screen bg-background">
@@ -142,17 +242,49 @@ export default async function ProfilePage() {
                         <User className="h-5 w-5 text-primary" />
                         Personal Information
                       </CardTitle>
-                      <Button variant="outline" size="sm">
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit
-                      </Button>
+                      {!isEditing ? (
+                        <Button variant="outline" size="sm" onClick={handleEdit}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit
+                        </Button>
+                      ) : (
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm" onClick={handleCancel} disabled={saving}>
+                            <X className="h-4 w-4 mr-2" />
+                            Cancel
+                          </Button>
+                          <Button size="sm" onClick={handleSave} disabled={saving}>
+                            {saving ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <Save className="h-4 w-4 mr-2" />
+                            )}
+                            Save
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-6">
+                    {/* Status Messages */}
+                    {error && (
+                      <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>{error}</AlertDescription>
+                      </Alert>
+                    )}
+                    
+                    {success && (
+                      <Alert>
+                        <CheckCircle className="h-4 w-4" />
+                        <AlertDescription>{success}</AlertDescription>
+                      </Alert>
+                    )}
+
                     <div className="flex items-center gap-6">
                       <Avatar className="h-20 w-20">
                         <AvatarImage 
-                          src={userData.user.user_metadata?.avatar_url || user.image || ""} 
+                          src={authUser?.user_metadata?.avatar_url || user.image || ""} 
                           alt={user.name || "User"} 
                         />
                         <AvatarFallback className="text-xl">
@@ -180,18 +312,23 @@ export default async function ProfilePage() {
                         <Label htmlFor="name">Full Name</Label>
                         <Input 
                           id="name" 
-                          value={user.name || ""} 
-                          disabled 
-                          className="bg-muted"
+                          value={isEditing ? editForm.name : (user.name || "")}
+                          onChange={(e) => isEditing && setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                          disabled={!isEditing}
+                          className={!isEditing ? "bg-muted" : ""}
+                          placeholder="Enter your full name"
                         />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="email">Email</Label>
                         <Input 
                           id="email" 
-                          value={user.email || ""} 
-                          disabled 
-                          className="bg-muted"
+                          type="email"
+                          value={isEditing ? editForm.email : (user.email || "")}
+                          onChange={(e) => isEditing && setEditForm(prev => ({ ...prev, email: e.target.value }))}
+                          disabled={!isEditing}
+                          className={!isEditing ? "bg-muted" : ""}
+                          placeholder="Enter your email address"
                         />
                       </div>
                       <div className="space-y-2">
@@ -227,37 +364,32 @@ export default async function ProfilePage() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {/* Mock activity data */}
-                      <div className="flex items-center justify-between py-3 border-b last:border-b-0">
-                        <div className="flex items-center gap-3">
-                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                          <div>
-                            <p className="font-medium">Solved "Two Sum Problem"</p>
-                            <p className="text-sm text-muted-foreground">Earned 100 points</p>
+                      {stats?.recentActivity && stats.recentActivity.length > 0 ? (
+                        stats.recentActivity.map((activity: any, index: number) => (
+                          <div key={activity.id || index} className="flex items-center justify-between py-3 border-b last:border-b-0">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-2 h-2 rounded-full ${
+                                activity.color === 'green' ? 'bg-green-500' :
+                                activity.color === 'blue' ? 'bg-blue-500' :
+                                activity.color === 'yellow' ? 'bg-yellow-500' :
+                                activity.color === 'red' ? 'bg-red-500' :
+                                activity.color === 'purple' ? 'bg-purple-500' :
+                                'bg-gray-500'
+                              }`}></div>
+                              <div>
+                                <p className="font-medium">{activity.title}</p>
+                                <p className="text-sm text-muted-foreground">{activity.description}</p>
+                              </div>
+                            </div>
+                            <span className="text-sm text-muted-foreground">{activity.timeAgo}</span>
                           </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-8">
+                          <p className="text-muted-foreground">No recent activity</p>
+                          <p className="text-sm text-muted-foreground mt-2">Start participating in challenges to see your activity here!</p>
                         </div>
-                        <span className="text-sm text-muted-foreground">2 days ago</span>
-                      </div>
-                      <div className="flex items-center justify-between py-3 border-b last:border-b-0">
-                        <div className="flex items-center gap-3">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                          <div>
-                            <p className="font-medium">Attempted "Binary Search Tree"</p>
-                            <p className="text-sm text-muted-foreground">Score: 75/100</p>
-                          </div>
-                        </div>
-                        <span className="text-sm text-muted-foreground">5 days ago</span>
-                      </div>
-                      <div className="flex items-center justify-between py-3 border-b last:border-b-0">
-                        <div className="flex items-center gap-3">
-                          <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                          <div>
-                            <p className="font-medium">Joined SkillSprint</p>
-                            <p className="text-sm text-muted-foreground">Welcome to the community!</p>
-                          </div>
-                        </div>
-                        <span className="text-sm text-muted-foreground">{new Date(user.createdAt).toLocaleDateString()}</span>
-                      </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -280,12 +412,16 @@ export default async function ProfilePage() {
                         <span className="font-semibold">{user.points}</span>
                       </div>
                       <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Challenges Attempted</span>
+                        <span className="font-semibold">{stats?.totalChallengesAttempted || 0}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
                         <span className="text-sm text-muted-foreground">Challenges Completed</span>
-                        <span className="font-semibold">{stats.totalChallengesCompleted}</span>
+                        <span className="font-semibold">{stats?.totalChallengesCompleted || 0}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-muted-foreground">Total Submissions</span>
-                        <span className="font-semibold">{stats.totalSubmissions}</span>
+                        <span className="font-semibold">{stats?.totalSubmissions || 0}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-muted-foreground">Success Rate</span>
@@ -293,11 +429,11 @@ export default async function ProfilePage() {
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-muted-foreground">Average Score</span>
-                        <span className="font-semibold">{stats.averageScore}/100</span>
+                        <span className="font-semibold">{stats?.averageScore || 0}/100</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-muted-foreground">Global Rank</span>
-                        <span className="font-semibold">#{stats.rank} of {stats.totalUsers}</span>
+                        <span className="font-semibold">#{stats?.rank || 0} of {stats?.totalUsers || 0}</span>
                       </div>
                     </div>
                   </CardContent>
@@ -332,8 +468,4 @@ export default async function ProfilePage() {
         </main>
       </div>
     )
-  } catch (error) {
-    console.error("Profile page error:", error)
-    redirect("/dashboard")
-  }
 }
