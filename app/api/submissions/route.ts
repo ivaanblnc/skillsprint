@@ -1,102 +1,188 @@
-import { type NextRequest, NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase/server"
+import { prisma } from "@/lib/prisma"
+import { z } from "zod"
 
+const submissionSchema = z.object({
+  challengeId: z.string(),
+  code: z.string(),
+  language: z.string(),
+  isDraft: z.boolean().default(false),
+})
+
+// POST - Create a new submission or save as draft
 export async function POST(req: NextRequest) {
   try {
-    const supabase = createServerClient()
-
-    // Get current user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
+    const supabase = await createServerClient()
+    
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    if (authError || !user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { challengeId, code, language } = await req.json()
+    const body = await req.json()
+    const { challengeId, code, language, isDraft } = submissionSchema.parse(body)
 
-    if (!challengeId || !code || !language) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
-    }
+    // Check if challenge exists and is active
+    const challenge = await prisma.challenge.findUnique({
+      where: { id: challengeId }
+    })
 
-    const { data: challenge, error: challengeError } = await supabase
-      .from("challenges")
-      .select("*")
-      .eq("id", challengeId)
-      .single()
-
-    if (challengeError || !challenge) {
+    if (!challenge) {
       return NextResponse.json({ error: "Challenge not found" }, { status: 404 })
     }
 
-    if (challenge.status !== "ACTIVE" || new Date() > new Date(challenge.end_date)) {
+    if (challenge.status !== "ACTIVE" || new Date() > challenge.endDate) {
       return NextResponse.json({ error: "Challenge is not active" }, { status: 400 })
     }
 
-    const { data: existingSubmission } = await supabase
-      .from("submissions")
-      .select("*")
-      .eq("challenge_id", challengeId)
-      .eq("user_id", user.id)
-      .single()
+    // Check if user already has a submission for this challenge
+    const existingSubmission = await prisma.submission.findUnique({
+      where: {
+        challengeId_userId: {
+          challengeId,
+          userId: user.id
+        }
+      }
+    })
 
+    // If submitting final solution and already has a FINAL submission (isDraft is false), reject
+    if (existingSubmission && !isDraft && !(existingSubmission as any).isDraft) {
+      return NextResponse.json(
+        { error: "You have already submitted a solution for this challenge" }, 
+        { status: 400 }
+      )
+    }
+
+    // If it's a draft, update existing submission or create new one
+    if (isDraft) {
+      if (existingSubmission) {
+        const updatedSubmission = await prisma.submission.update({
+          where: { id: existingSubmission.id },
+          data: {
+            code,
+            language,
+            submittedAt: new Date()
+          }
+        })
+
+        return NextResponse.json({ 
+          success: true, 
+          submission: updatedSubmission,
+          message: "Draft saved successfully"
+        })
+      } else {
+        const newSubmission = await prisma.submission.create({
+          data: {
+            challengeId,
+            userId: user.id,
+            code,
+            language,
+            status: "PENDING",
+            isDraft: true
+          } as any
+        })
+
+        return NextResponse.json({ 
+          success: true, 
+          submission: newSubmission,
+          message: "Draft saved successfully"
+        })
+      }
+    }
+
+    // For final submission
+    let submission
     if (existingSubmission) {
-      return NextResponse.json({ error: "You have already submitted a solution" }, { status: 400 })
-    }
-
-    const { data: submission, error: submissionError } = await supabase
-      .from("submissions")
-      .insert({
-        challenge_id: challengeId,
-        user_id: user.id,
-        code,
-        language,
-        status: "PENDING",
+      // Update the draft to final submission
+      submission = await prisma.submission.update({
+        where: { id: existingSubmission.id },
+        data: {
+          code,
+          language,
+          status: "PENDING",
+          isDraft: false,  // Mark as final submission
+          submittedAt: new Date()
+        } as any
       })
-      .select()
-      .single()
-
-    if (submissionError) {
-      return NextResponse.json({ error: "Failed to create submission" }, { status: 500 })
-    }
-
-    // Simulate code execution and scoring
-    const mockScore = Math.floor(Math.random() * 40) + 60
-    const mockStatus = mockScore >= 80 ? "ACCEPTED" : mockScore >= 60 ? "WRONG_ANSWER" : "RUNTIME_ERROR"
-
-    const { data: updatedSubmission, error: updateError } = await supabase
-      .from("submissions")
-      .update({
-        status: mockStatus,
-        score: mockScore,
-        execution_time: Math.floor(Math.random() * 1000) + 100,
-        memory: Math.floor(Math.random() * 1000) + 500,
-      })
-      .eq("id", submission.id)
-      .select()
-      .single()
-
-    if (updateError) {
-      return NextResponse.json({ error: "Failed to update submission" }, { status: 500 })
-    }
-
-    if (mockStatus === "ACCEPTED") {
-      await supabase.rpc("increment_user_points", {
-        user_id: user.id,
-        points_to_add: challenge.points,
+    } else {
+      // Create new submission
+      submission = await prisma.submission.create({
+        data: {
+          challengeId,
+          userId: user.id,
+          code,
+          language,
+          status: "PENDING",
+          isDraft: false  // Final submission
+        } as any
       })
     }
 
+    // Final submissions should remain PENDING until a judge reviews them
+    // No automatic scoring - judges will review and score manually
+    
     return NextResponse.json({
       success: true,
-      status: mockStatus,
-      score: mockScore,
-      submission: updatedSubmission,
+      status: "PENDING",
+      score: null,
+      submission: submission,
+      message: "Solution submitted successfully and is pending review"
     })
+
   } catch (error) {
-    console.error("Submission error:", error)
-    return NextResponse.json({ error: "Failed to submit solution" }, { status: 500 })
+    console.error("Error creating/updating submission:", error)
+    return NextResponse.json(
+      { error: "Internal server error" }, 
+      { status: 500 }
+    )
+  }
+}
+
+// GET - Get user's submission for a specific challenge
+export async function GET(req: NextRequest) {
+  try {
+    const supabase = await createServerClient()
+    
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    if (authError || !user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(req.url)
+    const challengeId = searchParams.get("challengeId")
+
+    if (!challengeId) {
+      return NextResponse.json({ error: "Challenge ID is required" }, { status: 400 })
+    }
+
+    const submission = await prisma.submission.findUnique({
+      where: {
+        challengeId_userId: {
+          challengeId,
+          userId: user.id
+        }
+      },
+      include: {
+        challenge: {
+          select: {
+            title: true,
+            difficulty: true,
+            points: true
+          }
+        }
+      }
+    })
+
+    return NextResponse.json({ submission })
+
+  } catch (error) {
+    console.error("Error fetching submission:", error)
+    return NextResponse.json(
+      { error: "Internal server error" }, 
+      { status: 500 }
+    )
   }
 }

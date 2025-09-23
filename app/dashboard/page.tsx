@@ -34,14 +34,14 @@ interface Challenge {
   difficulty: 'EASY' | 'MEDIUM' | 'HARD'
   points: number
   timeLimit: number
-  submissions: { count: number }[]
+  _count: { submissions: number }
 }
 
 interface Submission {
   id: string
   status: 'PENDING' | 'ACCEPTED' | 'WRONG_ANSWER' | 'TIME_LIMIT_EXCEEDED' | 'RUNTIME_ERROR' | 'COMPILATION_ERROR'
   score: number | null
-  submittedAt: string
+  submittedAt: Date
   challenge: {
     title: string
     difficulty: 'EASY' | 'MEDIUM' | 'HARD'
@@ -92,39 +92,63 @@ async function getDashboardData(userId: string, supabase: SupabaseClient) {
     
     console.log("User found in database:", user)
 
-    // Usar Supabase solo para datos que no están en Prisma aún (por ahora devolver datos mock hasta que las tablas estén listas)
-    const [submissionsResult, challengesResult, recentSubmissionsResult] = await Promise.all([
-      // Mock data for now since tables don't exist yet
-      Promise.resolve({ data: [], error: null }),
-      Promise.resolve({ data: [], error: null }),
-      Promise.resolve({ data: [], error: null })
+    // Usar Prisma para obtener datos de submissions y challenges
+    const [userSubmissions, activeChallenges, recentSubmissions] = await Promise.all([
+      // Get user's submissions
+      prisma.submission.findMany({
+        where: { userId },
+        include: {
+          challenge: {
+            select: {
+              title: true,
+              difficulty: true,
+              points: true
+            }
+          }
+        },
+        orderBy: { submittedAt: 'desc' }
+      }),
+      
+      // Get active challenges
+      prisma.challenge.findMany({
+        where: {
+          status: "ACTIVE",
+          endDate: { gt: new Date() }
+        },
+        include: {
+          _count: {
+            select: { submissions: true }
+          }
+        },
+        take: 5,
+        orderBy: { createdAt: 'desc' }
+      }),
+      
+      // Get recent submissions (last 5)
+      prisma.submission.findMany({
+        where: { userId },
+        include: {
+          challenge: {
+            select: {
+              title: true,
+              difficulty: true,
+              points: true
+            }
+          }
+        },
+        orderBy: { submittedAt: 'desc' },
+        take: 5
+      })
     ])
 
-    // Verificar errores de las consultas de Supabase
-    if (submissionsResult.error) {
-      console.error("Error fetching submissions:", submissionsResult.error)
-    }
-
-    if (challengesResult.error) {
-      console.error("Error fetching challenges:", challengesResult.error)
-    }
-
-    if (recentSubmissionsResult.error) {
-      console.error("Error fetching recent submissions:", recentSubmissionsResult.error)
-    }
-
-    // Procesar los datos
-    const submissions = (submissionsResult.data || []).map((s: any) => ({
+    // Procesar los datos para el formato esperado
+    const submissions = userSubmissions.map(s => ({
       status: s.status,
       score: s.score,
-      challenge: Array.isArray(s.challenges) && s.challenges.length > 0 ? s.challenges[0] : null,
+      challenge: s.challenge ? {
+        points: s.challenge.points
+      } : null,
     })) as SubmissionWithChallenge[]
-    
-    const activeChallenges = (challengesResult.data || []) as Challenge[]
-    const recentSubmissions = (recentSubmissionsResult.data || []).map((s: any) => ({
-      ...s,
-      challenge: Array.isArray(s.challenges) && s.challenges.length > 0 ? s.challenges[0] : null,
-    })) as Submission[]
 
     const acceptedSubmissions = submissions.filter((s) => s.status === "ACCEPTED")
     
@@ -372,7 +396,7 @@ export default async function DashboardPage() {
                                 <Clock className="h-3 w-3" />{challenge.timeLimit}min
                               </span>
                               <span className="flex items-center gap-1">
-                                <Users className="h-3 w-3" />{challenge.submissions?.[0]?.count || 0} submissions
+                                <Users className="h-3 w-3" />{challenge._count?.submissions || 0} submissions
                               </span>
                             </div>
                           </div>
@@ -424,7 +448,9 @@ export default async function DashboardPage() {
                             </div>
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            {new Date(submission.submittedAt).toLocaleDateString()}
+                            {submission.submittedAt instanceof Date 
+                              ? submission.submittedAt.toLocaleDateString() 
+                              : new Date(submission.submittedAt).toLocaleDateString()}
                           </div>
                         </div>
                       ))

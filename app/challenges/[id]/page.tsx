@@ -1,100 +1,15 @@
 import { notFound } from "next/navigation"
 import { createServerClient } from "@/lib/supabase/server"
+import { prisma } from "@/lib/prisma"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Trophy, Clock, Users, Calendar, Code2 } from "lucide-react"
+import { Trophy, Clock, Users, Calendar, Code2, CheckCircle, AlertCircle, Clock as ClockIcon } from "lucide-react"
 import Link from "next/link"
 import { DashboardNav } from "@/components/dashboard-nav"
 import { AuthRequiredTrigger } from "@/components/auth-required-trigger"
-
-// Mock data for challenges until the real data is available
-const mockChallenges = {
-  "challenge-1": {
-    id: "challenge-1",
-    title: "Two Sum",
-    description: "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.\n\nYou may assume that each input would have exactly one solution, and you may not use the same element twice.\n\nYou can return the answer in any order.",
-    difficulty: "EASY",
-    points: 100,
-    timeLimit: 30,
-    status: "ACTIVE",
-    createdAt: "2025-09-20T10:00:00Z",
-    endDate: "2025-12-31T23:59:59Z",
-    creator: {
-      name: "John Doe",
-      avatar: null
-    },
-    testCases: [
-      {
-        input: "[2,7,11,15], target = 9",
-        expectedOutput: "[0,1]"
-      },
-      {
-        input: "[3,2,4], target = 6", 
-        expectedOutput: "[1,2]"
-      }
-    ],
-    submissions: { count: 150 }
-  },
-  "challenge-2": {
-    id: "challenge-2",
-    title: "Valid Parentheses",
-    description: "Given a string s containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid.\n\nAn input string is valid if:\n\n1. Open brackets must be closed by the same type of brackets.\n2. Open brackets must be closed in the correct order.\n3. Every close bracket has a corresponding open bracket of the same type.",
-    difficulty: "EASY",
-    points: 120,
-    timeLimit: 25,
-    status: "ACTIVE",
-    createdAt: "2025-09-21T10:00:00Z",
-    endDate: "2025-12-31T23:59:59Z",
-    creator: {
-      name: "Jane Smith",
-      avatar: null
-    },
-    testCases: [
-      {
-        input: "\"()\"",
-        expectedOutput: "true"
-      },
-      {
-        input: "\"()[]{}\"",
-        expectedOutput: "true"
-      },
-      {
-        input: "\"(]\"",
-        expectedOutput: "false"
-      }
-    ],
-    submissions: { count: 89 }
-  },
-  "challenge-3": {
-    id: "challenge-3",
-    title: "Merge Two Sorted Lists",
-    description: "You are given the heads of two sorted linked lists list1 and list2.\n\nMerge the two lists into one sorted list. The list should be made by splicing together the nodes of the first two lists.\n\nReturn the head of the merged linked list.",
-    difficulty: "EASY",
-    points: 150,
-    timeLimit: 35,
-    status: "ACTIVE",
-    createdAt: "2025-09-22T10:00:00Z",
-    endDate: "2025-12-31T23:59:59Z",
-    creator: {
-      name: "Bob Wilson",
-      avatar: null
-    },
-    testCases: [
-      {
-        input: "list1 = [1,2,4], list2 = [1,3,4]",
-        expectedOutput: "[1,1,2,3,4,4]"
-      },
-      {
-        input: "list1 = [], list2 = []",
-        expectedOutput: "[]"
-      }
-    ],
-    submissions: { count: 203 }
-  }
-} as const
 
 async function getUserIfAuthenticated() {
   try {
@@ -112,22 +27,94 @@ async function getUserIfAuthenticated() {
   }
 }
 
+async function getChallengeWithSubmission(challengeId: string, userId?: string) {
+  try {
+    const challenge = await prisma.challenge.findUnique({
+      where: { id: challengeId },
+      include: {
+        creator: {
+          select: {
+            name: true,
+            image: true
+          }
+        },
+        testCases: {
+          where: { isPublic: true },
+          select: {
+            input: true,
+            expectedOutput: true
+          }
+        },
+        _count: {
+          select: {
+            submissions: true
+          }
+        }
+      }
+    })
+
+    if (!challenge) {
+      return null
+    }
+
+    // Get user's submission if authenticated
+    let userSubmission = null
+    if (userId) {
+      userSubmission = await prisma.submission.findUnique({
+        where: {
+          challengeId_userId: {
+            challengeId,
+            userId
+          }
+        }
+      })
+    }
+
+    return { challenge, userSubmission }
+  } catch (error) {
+    console.error("Error fetching challenge:", error)
+    return null
+  }
+}
+
 export default async function ChallengePage({ params }: { params: { id: string } }) {
   const user = await getUserIfAuthenticated()
   
-  // Get challenge from mock data
-  const challenge = mockChallenges[params.id as keyof typeof mockChallenges]
+  // Get challenge from database
+  const result = await getChallengeWithSubmission(params.id, user?.id)
   
-  if (!challenge) {
+  if (!result || !result.challenge) {
     notFound()
   }
 
+  const { challenge, userSubmission } = result
+
   const timeRemaining = Math.max(
     0,
-    Math.floor((new Date(challenge.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    Math.floor((challenge.endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
   )
 
-  const hasEnded = new Date() > new Date(challenge.endDate)
+  const hasEnded = new Date() > challenge.endDate
+  
+  // Check if user can participate (challenge not ended and no finalized submission)
+  const canParticipate = !hasEnded && (!userSubmission || (userSubmission as any).isDraft)
+
+  const getSubmissionStatus = () => {
+    if (!userSubmission) return null
+    
+    const statusConfig = {
+      ACCEPTED: { icon: CheckCircle, variant: "secondary" as const, text: "Solution Accepted", color: "text-green-600" },
+      PENDING: { icon: ClockIcon, variant: "default" as const, text: "Pending Review", color: "text-yellow-600" },
+      WRONG_ANSWER: { icon: AlertCircle, variant: "destructive" as const, text: "Wrong Answer", color: "text-red-600" },
+      RUNTIME_ERROR: { icon: AlertCircle, variant: "destructive" as const, text: "Runtime Error", color: "text-red-600" },
+      COMPILATION_ERROR: { icon: AlertCircle, variant: "destructive" as const, text: "Compilation Error", color: "text-red-600" },
+      TIME_LIMIT_EXCEEDED: { icon: AlertCircle, variant: "destructive" as const, text: "Time Limit Exceeded", color: "text-red-600" },
+    }
+
+    return statusConfig[userSubmission.status as keyof typeof statusConfig] || null
+  }
+
+  const submissionStatus = getSubmissionStatus()
 
   return (
     <div className="min-h-screen bg-background">
@@ -159,11 +146,31 @@ export default async function ChallengePage({ params }: { params: { id: string }
                 </div>
               </div>
               <div className="flex gap-2">
-                {!hasEnded && user && (
+                {/* Show submission status if user has submitted */}
+                {userSubmission && submissionStatus && (
+                  <div className="flex items-center gap-2">
+                    <submissionStatus.icon className={`h-4 w-4 ${submissionStatus.color}`} />
+                    <Badge variant={submissionStatus.variant}>
+                      {submissionStatus.text}
+                    </Badge>
+                    {userSubmission.score && (
+                      <span className="text-sm text-muted-foreground">
+                        {userSubmission.score}/100
+                      </span>
+                    )}
+                  </div>
+                )}
+                
+                {/* Action buttons */}
+                {canParticipate && user && (
                   <Link href={`/challenges/${challenge.id}/submit`}>
                     <Button>
                       <Code2 className="h-4 w-4 mr-2" />
-                      Start Challenge
+                      {userSubmission && (userSubmission as any).isDraft 
+                        ? "Continue Draft" 
+                        : userSubmission 
+                          ? "Improve Solution" 
+                          : "Start Challenge"}
                     </Button>
                   </Link>
                 )}
@@ -174,6 +181,12 @@ export default async function ChallengePage({ params }: { params: { id: string }
                       Start Challenge
                     </Button>
                   </AuthRequiredTrigger>
+                )}
+                {userSubmission && userSubmission.status === "ACCEPTED" && (
+                  <Button disabled>
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Completed
+                  </Button>
                 )}
               </div>
             </div>
@@ -186,7 +199,7 @@ export default async function ChallengePage({ params }: { params: { id: string }
               </span>
               <span className="flex items-center gap-1">
                 <Users className="h-4 w-4" />
-                {challenge.submissions.count} submissions
+                {challenge._count.submissions} submissions
               </span>
               <span className="flex items-center gap-1">
                 <Calendar className="h-4 w-4" />
@@ -265,17 +278,17 @@ export default async function ChallengePage({ params }: { params: { id: string }
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Submissions</span>
-                    <span className="text-sm font-medium">{challenge.submissions.count}</span>
+                    <span className="text-sm font-medium">{challenge._count.submissions}</span>
                   </div>
                   <Separator />
                   <div className="flex items-center gap-2">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={challenge.creator.avatar || ""} />
-                      <AvatarFallback>{challenge.creator.name.charAt(0)}</AvatarFallback>
+                      <AvatarImage src={challenge.creator?.image || ""} />
+                      <AvatarFallback>{challenge.creator?.name?.charAt(0) || "U"}</AvatarFallback>
                     </Avatar>
                     <div>
                       <p className="text-sm font-medium">Created by</p>
-                      <p className="text-xs text-muted-foreground">{challenge.creator.name}</p>
+                      <p className="text-xs text-muted-foreground">{challenge.creator?.name || "Unknown"}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -287,11 +300,29 @@ export default async function ChallengePage({ params }: { params: { id: string }
                   <CardTitle>Actions</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {!hasEnded && user && (
+                  {/* Show submission status card if user has submitted */}
+                  {userSubmission && submissionStatus && (
+                    <div className="p-3 bg-muted rounded-lg border">
+                      <div className="flex items-center gap-2 mb-2">
+                        <submissionStatus.icon className={`h-4 w-4 ${submissionStatus.color}`} />
+                        <span className="font-medium text-sm">{submissionStatus.text}</span>
+                      </div>
+                      {userSubmission.score && (
+                        <div className="text-xs text-muted-foreground">
+                          Score: {userSubmission.score}/100
+                        </div>
+                      )}
+                      <div className="text-xs text-muted-foreground">
+                        Submitted: {new Date(userSubmission.submittedAt).toLocaleDateString()}
+                      </div>
+                    </div>
+                  )}
+
+                  {canParticipate && user && (
                     <Link href={`/challenges/${challenge.id}/submit`} className="block">
                       <Button className="w-full">
                         <Code2 className="h-4 w-4 mr-2" />
-                        Start Coding
+                        {userSubmission ? "Continue Draft" : "Start Coding"}
                       </Button>
                     </Link>
                   )}
@@ -302,6 +333,12 @@ export default async function ChallengePage({ params }: { params: { id: string }
                         Start Coding
                       </Button>
                     </AuthRequiredTrigger>
+                  )}
+                  {userSubmission && userSubmission.score !== null && (
+                    <Button disabled className="w-full text-green-600">
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Challenge Completed
+                    </Button>
                   )}
                   <Link href="/challenges" className="block">
                     <Button variant="outline" className="w-full bg-transparent">

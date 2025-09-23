@@ -102,6 +102,7 @@ model Submission {
   score       Int?
   executionTime Int?           // in milliseconds
   memory      Int?             // in KB
+  isDraft     Boolean          @default(true)
   submittedAt DateTime         @default(now())
 
   challenge Challenge  @relation(fields: [challengeId], references: [id])
