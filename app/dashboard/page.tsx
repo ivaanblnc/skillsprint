@@ -455,12 +455,33 @@ export default async function DashboardPage() {
                       <Trophy className="mr-2 h-4 w-4" /> View Leaderboard
                     </Button>
                   </Link>
-                  {user.role === "creator" && (
-                    <Link href="/challenges/create" className="block">
-                      <Button variant="outline" className="w-full justify-start bg-transparent">
-                        <Code2 className="mr-2 h-4 w-4" /> Create Challenge
-                      </Button>
-                    </Link>
+                  {user.role === "CREATOR" && (
+                    <>
+                      <Link href="/challenges/create" className="block">
+                        <Button variant="outline" className="w-full justify-start bg-transparent">
+                          <Code2 className="mr-2 h-4 w-4" /> Create Challenge
+                        </Button>
+                      </Link>
+                      <Link href="/challenges/manage" className="block">
+                        <Button variant="outline" className="w-full justify-start bg-transparent">
+                          <Trophy className="mr-2 h-4 w-4" /> Manage My Challenges
+                        </Button>
+                      </Link>
+                    </>
+                  )}
+                  {user.role === "JUDGE" && (
+                    <>
+                      <Link href="/judge/submissions" className="block">
+                        <Button variant="outline" className="w-full justify-start bg-transparent">
+                          <Target className="mr-2 h-4 w-4" /> Review Submissions
+                        </Button>
+                      </Link>
+                      <Link href="/judge/challenges" className="block">
+                        <Button variant="outline" className="w-full justify-start bg-transparent">
+                          <Users className="mr-2 h-4 w-4" /> Judge Challenges
+                        </Button>
+                      </Link>
+                    </>
                   )}
                 </CardContent>
               </Card>

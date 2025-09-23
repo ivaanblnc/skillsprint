@@ -2,6 +2,21 @@ import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 
+// Función para mapear roles del frontend a los valores de la base de datos
+function mapRole(role: string): "CREATOR" | "PARTICIPANT" | "JUDGE" {
+  const normalizedRole = role?.toUpperCase()
+  switch (normalizedRole) {
+    case "CREATOR":
+    case "ORGANIZER": // legacy support
+      return "CREATOR"
+    case "JUDGE":
+      return "JUDGE"
+    case "PARTICIPANT":
+    default:
+      return "PARTICIPANT"
+  }
+}
+
 export async function GET(request: NextRequest) {
   console.log("=== AUTH CALLBACK HANDLER STARTED ===")
   const { searchParams, origin } = new URL(request.url)
@@ -51,11 +66,28 @@ export async function GET(request: NextRequest) {
         const { prisma } = await import("@/lib/prisma")
         console.log("✅ Prisma imported successfully")
         
+        // Mapear roles del frontend a la base de datos
+        function mapRole(frontendRole: string): 'CREATOR' | 'PARTICIPANT' | 'JUDGE' {
+          switch (frontendRole?.toLowerCase()) {
+            case 'organizer':
+            case 'creator':
+              return 'CREATOR'
+            case 'judge':
+              return 'JUDGE'
+            case 'participant':
+            default:
+              return 'PARTICIPANT'
+          }
+        }
+        
+        const mappedRole = mapRole(data.user.user_metadata?.role || 'participant')
+        
         console.log("User data to save:", {
           id: data.user.id,
           email: data.user.email,
           name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'User',
-          role: data.user.user_metadata?.role?.toUpperCase() || "PARTICIPANT",
+          originalRole: data.user.user_metadata?.role,
+          mappedRole: mappedRole,
           metadata: data.user.user_metadata
         })
         
@@ -64,14 +96,14 @@ export async function GET(request: NextRequest) {
           where: { email: data.user.email! },
           update: {
             name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'User',
-            role: data.user.user_metadata?.role?.toUpperCase() || "PARTICIPANT",
+            role: mappedRole,
             updatedAt: new Date(),
           },
           create: {
             id: data.user.id,
             email: data.user.email!,
             name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'User',
-            role: data.user.user_metadata?.role?.toUpperCase() || "PARTICIPANT",
+            role: mappedRole,
           },
         })
         

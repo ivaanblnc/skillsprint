@@ -8,14 +8,14 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Mail, Code2, Users, Trophy } from "lucide-react"
+import { Mail, Code2, Users, Trophy, Scale } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [name, setName] = useState("")
-  const [role, setRole] = useState("participant")
+  const [role, setRole] = useState("PARTICIPANT")
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState("")
   const router = useRouter()
@@ -105,8 +105,9 @@ export default function RegisterPage() {
   }
 
   const roleOptions = [
-    { value: "participant", label: "Participant", description: "Join challenges and compete", icon: Users },
-    { value: "organizer", label: "Organizer", description: "Create and manage challenges", icon: Trophy },
+    { value: "PARTICIPANT", label: "Participant", description: "Join challenges and compete", icon: Users },
+    { value: "CREATOR", label: "Creator", description: "Create and manage challenges", icon: Trophy },
+    { value: "JUDGE", label: "Judge", description: "Evaluate and score submissions", icon: Scale },
   ]
 
   return (

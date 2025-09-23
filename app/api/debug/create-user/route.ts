@@ -18,13 +18,12 @@ export async function GET(request: NextRequest) {
         name: "Ivan Test",
         role: "PARTICIPANT",
         updatedAt: new Date(),
-      },
-      create: {
-        id: testUserId,
-        email: testEmail,
-        name: "Ivan Test",
-        role: "PARTICIPANT",
-      },
+      },          create: {
+            id: testUserId,
+            email: testEmail,
+            name: "Ivan Creator",
+            role: "CREATOR",
+          },
     })
     
     console.log("✅ User created/updated successfully:", dbUser)
