@@ -14,20 +14,32 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Code2, Trophy, Target, LogOut, Settings, Menu, X } from "lucide-react"
+import { Code2, Trophy, Target, LogOut, Settings, Menu, X, Gavel } from "lucide-react"
 
 export function DashboardNav() {
   const router = useRouter()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [user, setUser] = useState<any>(null)
-  const [userInfo, setUserInfo] = useState<{name: string | null, email: string | null} | null>(null)
+  const [userInfo, setUserInfo] = useState<{name: string | null, email: string | null, role: string | null} | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const navigation = [
-    { name: "Dashboard", href: "/dashboard", icon: Target },
-    { name: "Challenges", href: "/challenges", icon: Code2 },
-    { name: "Leaderboard", href: "/leaderboard", icon: Trophy },
-  ]
+  // Dynamic navigation based on user role
+  const getNavigation = () => {
+    const baseNavigation = [
+      { name: "Dashboard", href: "/dashboard", icon: Target },
+      { name: "Challenges", href: "/challenges", icon: Code2 },
+      { name: "Leaderboard", href: "/leaderboard", icon: Trophy },
+    ]
+    
+    // Add judge-specific navigation if user is a judge
+    if (userInfo?.role === 'JUDGE') {
+      baseNavigation.splice(2, 0, { name: "Judge Panel", href: "/judge/challenges", icon: Gavel })
+    }
+    
+    return baseNavigation
+  }
+
+  const navigation = getNavigation()
 
   // Function to get display name from email
   const getDisplayName = () => {
@@ -160,6 +172,14 @@ export function DashboardNav() {
                     Dashboard
                   </Link>
                 </DropdownMenuItem>
+                {userInfo?.role === 'JUDGE' && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/judge/challenges" className="flex items-center">
+                      <Gavel className="mr-2 h-4 w-4" />
+                      Judge Panel
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem asChild>
                   <Link href="/profile" className="flex items-center">
                     <Settings className="mr-2 h-4 w-4" />

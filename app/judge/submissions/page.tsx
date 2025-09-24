@@ -112,9 +112,9 @@ export default async function JudgeSubmissionsPage({
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <Link href="/dashboard" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-4">
+            <Link href="/judge/challenges" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-4">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Dashboard
+              Back to Challenges
             </Link>
             <h1 className="text-3xl font-bold mb-2">Review Submissions</h1>
             <p className="text-muted-foreground">Evaluate and score participant submissions</p>

@@ -5,6 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { CheckCircle, XCircle, AlertCircle, Code2, Download } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
@@ -79,8 +83,39 @@ function getStatusIcon(status: string) {
 export function SubmissionsList({ initialSubmissions }: SubmissionsListProps) {
   const [submissions, setSubmissions] = useState<Submission[]>(initialSubmissions)
   const [loadingSubmissions, setLoadingSubmissions] = useState<Set<string>>(new Set())
+  
+  // Modal states
+  const [showScoreModal, setShowScoreModal] = useState(false)
+  const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null)
+  const [customScore, setCustomScore] = useState<number>(0)
+  const [feedback, setFeedback] = useState<string>("")
 
-  const handleSubmissionAction = async (submissionId: string, action: 'ACCEPT' | 'REJECT') => {
+  const handleAcceptClick = (submission: Submission) => {
+    setSelectedSubmission(submission)
+    setCustomScore(submission.challenge.points) // Default to max points
+    setFeedback("")
+    setShowScoreModal(true)
+  }
+
+  const handleRejectClick = (submission: Submission) => {
+    handleSubmissionAction(submission.id, 'REJECT', 0, "")
+  }
+
+  const handleConfirmAccept = () => {
+    if (!selectedSubmission) return
+    handleSubmissionAction(selectedSubmission.id, 'ACCEPT', customScore, feedback)
+    setShowScoreModal(false)
+    setSelectedSubmission(null)
+  }
+
+  const handleCancelAccept = () => {
+    setShowScoreModal(false)
+    setSelectedSubmission(null)
+    setCustomScore(0)
+    setFeedback("")
+  }
+
+  const handleSubmissionAction = async (submissionId: string, action: 'ACCEPT' | 'REJECT', score?: number, feedbackText?: string) => {
     setLoadingSubmissions(prev => new Set(prev).add(submissionId))
 
     try {
@@ -91,7 +126,9 @@ export function SubmissionsList({ initialSubmissions }: SubmissionsListProps) {
         },
         body: JSON.stringify({
           submissionId,
-          action
+          action,
+          score,
+          feedback: feedbackText
         })
       })
 
@@ -99,8 +136,6 @@ export function SubmissionsList({ initialSubmissions }: SubmissionsListProps) {
         const errorData = await response.json()
         throw new Error(errorData.error || 'Failed to update submission')
       }
-
-      const { submission: updatedSubmission } = await response.json()
 
       // Remove the submission from the list since it's no longer pending
       setSubmissions(prev => prev.filter(s => s.id !== submissionId))
@@ -203,7 +238,7 @@ export function SubmissionsList({ initialSubmissions }: SubmissionsListProps) {
                     <Button 
                       size="sm" 
                       className="bg-green-600 hover:bg-green-700"
-                      onClick={() => handleSubmissionAction(submission.id, 'ACCEPT')}
+                      onClick={() => handleAcceptClick(submission)}
                       disabled={loadingSubmissions.has(submission.id)}
                     >
                       <CheckCircle className="h-4 w-4 mr-2" />
@@ -212,7 +247,7 @@ export function SubmissionsList({ initialSubmissions }: SubmissionsListProps) {
                     <Button 
                       size="sm" 
                       variant="destructive"
-                      onClick={() => handleSubmissionAction(submission.id, 'REJECT')}
+                      onClick={() => handleRejectClick(submission)}
                       disabled={loadingSubmissions.has(submission.id)}
                     >
                       <XCircle className="h-4 w-4 mr-2" />
@@ -229,6 +264,69 @@ export function SubmissionsList({ initialSubmissions }: SubmissionsListProps) {
           )}
         </div>
       </CardContent>
+
+      {/* Score and Feedback Modal */}
+      <Dialog open={showScoreModal} onOpenChange={setShowScoreModal}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Accept Submission</DialogTitle>
+            <DialogDescription>
+              Set the score and optionally provide feedback for this submission.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedSubmission && (
+            <div className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <h4 className="font-medium">{selectedSubmission.challenge.title}</h4>
+                <p className="text-sm text-muted-foreground">
+                  Submitted by {selectedSubmission.user.name}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Max points: {selectedSubmission.challenge.points}
+                </p>
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="score">Score</Label>
+                <Input
+                  id="score"
+                  type="number"
+                  min="0"
+                  max={selectedSubmission.challenge.points}
+                  value={customScore}
+                  onChange={(e) => setCustomScore(Number(e.target.value))}
+                  placeholder="Enter score"
+                />
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="feedback">Feedback (Optional)</Label>
+                <Textarea
+                  id="feedback"
+                  value={feedback}
+                  onChange={(e) => setFeedback(e.target.value)}
+                  placeholder="Provide feedback for the participant..."
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCancelAccept}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleConfirmAccept}
+              className="bg-green-600 hover:bg-green-700"
+              disabled={!selectedSubmission || customScore < 0 || customScore > (selectedSubmission?.challenge.points || 0)}
+            >
+              Accept Submission
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   )
 }

@@ -121,7 +121,7 @@ export async function PATCH(request: NextRequest) {
 
     // Parse request body
     const body = await request.json()
-    const { submissionId, action, score } = body
+    const { submissionId, action, score, feedback } = body
 
     if (!submissionId || !action) {
       return NextResponse.json({ error: 'Missing required fields: submissionId and action' }, { status: 400 })
@@ -166,9 +166,23 @@ export async function PATCH(request: NextRequest) {
       where: { id: submissionId },
       data: {
         status: action === 'ACCEPT' ? SubmissionStatus.ACCEPTED : ('REJECTED' as any),
-        score: newScore
+        score: newScore,
+        reviewedAt: new Date(),
+        reviewedById: user.id
       }
     })
+
+    // Create feedback if provided
+    if (feedback && feedback.trim()) {
+      await prisma.feedback.create({
+        data: {
+          submissionId: submissionId,
+          judgeId: user.id,
+          comment: feedback.trim(),
+          rating: action === 'ACCEPT' ? Math.ceil((newScore / existingSubmission.challenge.points) * 5) : 1 // Convert score to 1-5 rating
+        }
+      })
+    }
 
     return NextResponse.json({ 
       message: `Submission ${action.toLowerCase()}ed successfully`,

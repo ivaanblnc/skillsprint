@@ -4,9 +4,13 @@ import { createServerClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Target, Clock, Code2, Users, Eye } from "lucide-react"
+import { ArrowLeft, Target, Clock, Code2, Users, Eye, RefreshCw } from "lucide-react"
 import Link from "next/link"
 import { DashboardNav } from "@/components/dashboard-nav"
+import { RefreshButton } from "@/components/refresh-button"
+
+// Revalidate this page every 30 seconds to show updated submission statuses
+export const revalidate = 30
 
 async function checkJudgeAccess() {
   const supabase = await createServerClient()
@@ -47,16 +51,24 @@ async function getJudgeChallenges() {
         }
       },
       submissions: {
+        where: {
+          isDraft: false // Only include non-draft submissions
+        },
         select: {
           id: true,
           status: true,
           score: true,
-          submittedAt: true
+          submittedAt: true,
+          reviewedAt: true
         }
       },
       _count: {
         select: {
-          submissions: true
+          submissions: {
+            where: {
+              isDraft: false
+            }
+          }
         }
       }
     },
@@ -76,10 +88,27 @@ async function getJudgeChallenges() {
       ? Math.round(submissionsWithScores.reduce((sum, s) => sum + (s.score || 0), 0) / submissionsWithScores.length)
       : 0
 
-    // Determine status based on end date
+    // Determine status from judge perspective
     const now = new Date()
     const endDate = new Date(challenge.endDate)
-    const status = endDate > now ? 'ACTIVE' : 'COMPLETED'
+    let status: string
+    
+    // Debug log
+    console.log(`Challenge ${challenge.title}:`, {
+      totalSubmissions,
+      pendingReviews,
+      hasEnded: endDate <= now,
+      submissions: challenge.submissions.map(s => ({ status: s.status, reviewedAt: s.reviewedAt }))
+    })
+    
+    // Para un juez: COMPLETED = ya terminó de revisar todas las submissions
+    if (totalSubmissions > 0 && pendingReviews === 0) {
+      status = 'COMPLETED'  // El juez ya revisó todo
+    } else if (pendingReviews > 0) {
+      status = 'PENDING'    // Tiene submissions pendientes
+    } else {
+      status = 'ACTIVE'     // No hay submissions aún
+    }
 
     return {
       id: challenge.id,
@@ -129,6 +158,7 @@ export default async function JudgeChallengesPage() {
   const challenges = await getJudgeChallenges()
 
   const activeChallenges = challenges.filter(c => c.status === "ACTIVE")
+  const pendingChallenges = challenges.filter(c => c.status === "PENDING")
   const completedChallenges = challenges.filter(c => c.status === "COMPLETED")
   const totalPendingReviews = challenges.reduce((sum, c) => sum + c.pendingReviews, 0)
 
@@ -144,8 +174,13 @@ export default async function JudgeChallengesPage() {
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Dashboard
             </Link>
-            <h1 className="text-3xl font-bold mb-2">Judge Challenges</h1>
-            <p className="text-muted-foreground">Manage challenges assigned to you for evaluation</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold mb-2">Judge Challenges</h1>
+                <p className="text-muted-foreground">Manage challenges assigned to you for evaluation</p>
+              </div>
+              <RefreshButton />
+            </div>
           </div>
 
           {/* Stats */}
@@ -195,20 +230,26 @@ export default async function JudgeChallengesPage() {
             </Card>
           </div>
 
-          {/* Active Challenges */}
+          {/* Pending Reviews */}
           <Card className="mb-8">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-green-500" />
-                Active Challenges
+                <Code2 className="h-5 w-5 text-yellow-500" />
+                Challenges with Pending Reviews
               </CardTitle>
               <CardDescription>
-                Challenges currently accepting submissions and requiring review
+                Challenges with submissions awaiting your evaluation
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {activeChallenges.map((challenge) => (
+                {pendingChallenges.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Code2 className="h-12 w-12 mx-auto mb-4 text-muted-foreground/30" />
+                    <p>No pending reviews at the moment</p>
+                  </div>
+                ) : (
+                  pendingChallenges.map((challenge) => (
                   <Card key={challenge.id} className="hover:shadow-md transition-shadow">
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between mb-4">
@@ -281,7 +322,8 @@ export default async function JudgeChallengesPage() {
                       </div>
                     </CardContent>
                   </Card>
-                ))}
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
@@ -299,7 +341,14 @@ export default async function JudgeChallengesPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {completedChallenges.map((challenge) => (
+                {completedChallenges.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Target className="h-12 w-12 mx-auto mb-4 text-muted-foreground/30" />
+                    <p>No completed challenges yet</p>
+                    <p className="text-sm">Challenges will appear here after you finish reviewing all submissions</p>
+                  </div>
+                ) : (
+                  completedChallenges.map((challenge) => (
                   <Card key={challenge.id} className="opacity-75">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
@@ -325,15 +374,16 @@ export default async function JudgeChallengesPage() {
                         </div>
                         
                         <Button size="sm" variant="outline" asChild>
-                          <Link href={`/challenges/${challenge.id}`}>
-                            <Eye className="h-4 w-4 mr-2" />
+                          <Link href={`/judge/challenges/${challenge.id}/results`}>
+                            <Target className="h-4 w-4 mr-2" />
                             View Results
                           </Link>
                         </Button>
                       </div>
                     </CardContent>
                   </Card>
-                ))}
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
