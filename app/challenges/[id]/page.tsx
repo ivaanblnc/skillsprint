@@ -32,29 +32,75 @@ async function getUserIfAuthenticated() {
 
 async function getChallengeWithSubmission(challengeId: string, userId?: string) {
   try {
-    const challenge = await prisma.challenge.findUnique({
-      where: { id: challengeId },
-      include: {
-        creator: {
-          select: {
-            name: true,
-            image: true
-          }
+    // First, get user information if userId is provided
+    let userRole = null
+    if (userId) {
+      const userData = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { role: true }
+      })
+      userRole = userData?.role
+    }
+
+    let challenge
+    
+    if (userRole === "CREATOR") {
+      // For creators, allow access to their own challenges (any status)
+      challenge = await prisma.challenge.findUnique({
+        where: { 
+          id: challengeId,
+          creatorId: userId // Creators can only see their own challenges
         },
-        testCases: {
-          where: { isPublic: true },
-          select: {
-            input: true,
-            expectedOutput: true
-          }
-        },
-        _count: {
-          select: {
-            submissions: true
+        include: {
+          creator: {
+            select: {
+              name: true,
+              image: true
+            }
+          },
+          testCases: {
+            where: { isPublic: true },
+            select: {
+              input: true,
+              expectedOutput: true
+            }
+          },
+          _count: {
+            select: {
+              submissions: true
+            }
           }
         }
-      }
-    })
+      })
+    } else {
+      // For participants and anonymous users, only allow access to ACTIVE or COMPLETED challenges
+      challenge = await prisma.challenge.findFirst({
+        where: {
+          id: challengeId,
+          status: { in: ["ACTIVE", "COMPLETED"] }
+        },
+        include: {
+          creator: {
+            select: {
+              name: true,
+              image: true
+            }
+          },
+          testCases: {
+            where: { isPublic: true },
+            select: {
+              input: true,
+              expectedOutput: true
+            }
+          },
+          _count: {
+            select: {
+              submissions: true
+            }
+          }
+        }
+      })
+    }
 
     if (!challenge) {
       return null

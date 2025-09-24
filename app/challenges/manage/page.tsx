@@ -28,61 +28,7 @@ interface Challenge {
   }
 }
 
-// Mock data para challenges creados por el usuario
-const mockCreatedChallenges = [
-  {
-    id: "1",
-    title: "Two Sum Problem",
-    difficulty: "EASY",
-    points: 50,
-    status: "ACTIVE",
-    totalSubmissions: 24,
-    acceptedSubmissions: 18,
-    avgScore: 85,
-    timeLimit: 30,
-    createdAt: "2024-01-10T10:00:00Z",
-    participants: 15
-  },
-  {
-    id: "2", 
-    title: "Binary Search Implementation",
-    difficulty: "MEDIUM",
-    points: 100,
-    status: "ACTIVE",
-    totalSubmissions: 16,
-    acceptedSubmissions: 11,
-    avgScore: 72,
-    timeLimit: 45,
-    createdAt: "2024-01-12T14:30:00Z",
-    participants: 12
-  },
-  {
-    id: "3",
-    title: "Fibonacci Sequence",
-    difficulty: "EASY",
-    points: 30,
-    status: "DRAFT",
-    totalSubmissions: 0,
-    acceptedSubmissions: 0,
-    avgScore: 0,
-    timeLimit: 20,
-    createdAt: "2024-01-15T09:15:00Z",
-    participants: 0
-  },
-  {
-    id: "4",
-    title: "Graph Traversal Algorithm",
-    difficulty: "HARD", 
-    points: 200,
-    status: "COMPLETED",
-    totalSubmissions: 8,
-    acceptedSubmissions: 3,
-    avgScore: 58,
-    timeLimit: 90,
-    createdAt: "2024-01-05T16:45:00Z",
-    participants: 6
-  }
-]
+
 
 function getDifficultyVariant(difficulty: string): "default" | "secondary" | "destructive" {
   switch (difficulty?.toUpperCase()) {
@@ -269,7 +215,7 @@ export default function ManageChallengesPage() {
                 <BarChart3 className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{mockCreatedChallenges.length}</div>
+                <div className="text-2xl font-bold">{challenges.length}</div>
                 <p className="text-xs text-muted-foreground">Created by you</p>
               </CardContent>
             </Card>

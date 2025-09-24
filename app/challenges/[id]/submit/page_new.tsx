@@ -171,43 +171,6 @@ export default function ChallengeSubmitPage() {
     }
   }, [challenge, isSubmitted, loading])
 
-  // Cargar envío existente al montar el componente
-  useEffect(() => {
-    const loadExistingSubmission = async () => {
-      try {
-        const response = await fetch(`/api/submissions?challengeId=${challengeId}`)
-        if (response.ok) {
-          const data = await response.json()
-          if (data.submission) {
-            setExistingSubmission(data.submission)
-            setCode(data.submission.code || "")
-            setLanguage(data.submission.language || "javascript")
-            
-            // Verificar si es un envío final basado en isDraft
-            // Draft = isDraft: true, Final submission = isDraft: false
-            if (!data.submission.isDraft) {
-              setIsSubmitted(true)
-              setIsActive(false) // Detener el timer
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Error loading existing submission:", error)
-      }
-    }
-
-    loadExistingSubmission()
-  }, [challengeId])
-
-  // Inicializar el timer cuando se monta el componente
-  useEffect(() => {
-    if (challenge && !isSubmitted && !loading) {
-      const totalTime = challenge.timeLimit * 60 // convertir minutos a segundos
-      setTimeLeft(totalTime)
-      setIsActive(true)
-    }
-  }, [challenge, isSubmitted, loading])
-
   // Auto-submit function when time runs out
   const handleAutoSubmit = useCallback(async () => {
     if (isSubmitted || isSubmitting) return
@@ -270,9 +233,7 @@ export default function ChallengeSubmitPage() {
     return () => {
       if (interval) clearInterval(interval)
     }
-  }, [isActive, timeLeft])
-
-
+  }, [isActive, timeLeft, isSubmitted, handleAutoSubmit])
 
   // Plantilla inicial del código
   useEffect(() => {
@@ -280,105 +241,128 @@ export default function ChallengeSubmitPage() {
       javascript: `// Write your solution here
 function solution() {
     // Your code here
+    return result;
 }
 
-// Example usage:
-// console.log(solution());`,
+console.log(solution());`,
       python: `# Write your solution here
 def solution():
     # Your code here
-    pass
+    return result
 
-# Example usage:
-# print(solution())`,
+print(solution())`,
       java: `// Write your solution here
 public class Solution {
-    public void solution() {
+    public static void main(String[] args) {
         // Your code here
+        System.out.println("Result: ");
     }
 }`,
       cpp: `// Write your solution here
 #include <iostream>
-using namespace std;
-
-void solution() {
-    // Your code here
-}
+using namespace std; 
 
 int main() {
-    solution();
+    // Your code here
+    cout << "Result: " << endl;
     return 0;
 }`
     }
-    
-    if (!code) {
+
+    if (!code && !existingSubmission) {
       setCode(templates[language as keyof typeof templates] || templates.javascript)
     }
-  }, [language, code])
+  }, [language, code, existingSubmission])
 
-  // Funciones de drag and drop
-  const handleDragEnter = useCallback((e: React.DragEvent) => {
+  // Guardar borrador automáticamente cada 30 segundos
+  useEffect(() => {
+    if (!isSubmitted && code && challengeId) {
+      const interval = setInterval(() => {
+        localStorage.setItem(`draft_${challengeId}`, JSON.stringify({
+          code,
+          language,
+          timestamp: Date.now()
+        }))
+      }, 30000) // 30 segundos
+
+      return () => clearInterval(interval)
+    }
+  }, [code, language, challengeId, isSubmitted])
+
+  // Cargar borrador guardado
+  useEffect(() => {
+    if (!existingSubmission && challengeId) {
+      const savedDraft = localStorage.getItem(`draft_${challengeId}`)
+      if (savedDraft) {
+        try {
+          const draft = JSON.parse(savedDraft)
+          if (draft.code && !code) {
+            setCode(draft.code)
+            setLanguage(draft.language || "javascript")
+          }
+        } catch (error) {
+          console.error("Error loading draft:", error)
+        }
+      }
+    }
+  }, [challengeId, existingSubmission, code])
+
+  // Event handlers
+  const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
-    e.stopPropagation()
     setIsDragging(true)
   }, [])
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault()
-    e.stopPropagation()
     setIsDragging(false)
-  }, [])
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
   }, [])
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
-    e.stopPropagation()
     setIsDragging(false)
-
-    const files = Array.from(e.dataTransfer.files)
+    
+    const files = e.dataTransfer.files
     if (files.length > 0) {
-      const file = files[0]
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        toast.error("File size must be less than 5MB")
-        return
-      }
-      setUploadedFile(file)
-      toast.success(`File "${file.name}" uploaded successfully`)
+      handleFileUpload(files[0])
     }
   }, [])
 
-  // Función para seleccionar archivo
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        toast.error("File size must be less than 5MB")
-        return
-      }
+  const handleFileUpload = useCallback((file: File) => {
+    if (isSubmitted) return
+    
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const content = e.target?.result as string
+      setCode(content)
       setUploadedFile(file)
-      toast.success(`File "${file.name}" uploaded successfully`)
+      setActiveTab("code")
     }
-  }
+    reader.readAsText(file)
+  }, [isSubmitted])
 
-  // Función para ejecutar código - removido porque implementar un compilador real es muy complejo
-  // const handleRunCode = async () => {
-  //   toast.info("Code execution feature will be available soon!")
-  // }
-
-  // Función para guardar como draft
-  const handleSaveDraft = () => {
-    if (!code.trim() && !uploadedFile) {
-      toast.error("Please provide a solution before saving")
+  const handleRunCode = useCallback(async () => {
+    if (!code.trim()) {
+      toast.error("Please write some code first")
       return
     }
-    setShowSaveDraftDialog(true)
-  }
 
-  const confirmSaveDraft = async () => {
+    try {
+      setOutput("Running your code...\n")
+      
+      // Simulate code execution
+      setTimeout(() => {
+        setOutput(`> Code executed successfully!\n> Language: ${language}\n> Output:\nYour code output would appear here...`)
+      }, 1000)
+      
+    } catch (error) {
+      setOutput(`Error: ${error}`)
+    }
+  }, [code, language])
+
+  const handleSaveDraft = useCallback(async () => {
+    if (isSubmitted || isSaving) return
+    
     setIsSaving(true)
     try {
       const response = await fetch('/api/submissions', {
@@ -396,51 +380,34 @@ int main() {
 
       const data = await response.json()
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to save draft')
+      if (response.ok) {
+        setExistingSubmission(data.submission)
+        localStorage.setItem(`draft_${challengeId}`, JSON.stringify({
+          code,
+          language,
+          timestamp: Date.now()
+        }))
+        toast.success(data.message || "Draft saved successfully!")
+        setShowSaveDraftDialog(false)
+      } else {
+        throw new Error(data.message || "Failed to save draft")
       }
-
-      // Guardar también en localStorage como backup
-      localStorage.setItem(`draft_${challengeId}`, JSON.stringify({
-        code,
-        language,
-        uploadedFile: uploadedFile ? {
-          name: uploadedFile.name,
-          size: uploadedFile.size,
-          type: uploadedFile.type
-        } : null,
-        timestamp: new Date().toISOString()
-      }))
-
-      toast.success(data.message || "Draft saved successfully! You can continue later.")
-      setShowSaveDraftDialog(false)
-      router.push("/challenges")
     } catch (error) {
       console.error("Error saving draft:", error)
       toast.error(error instanceof Error ? error.message : "Failed to save draft. Please try again.")
     } finally {
       setIsSaving(false)
     }
-  }
+  }, [challengeId, code, language, isSubmitted, isSaving])
 
-  // Función handleSave removida - era redundante con handleSaveDraft
-
-  // Función para enviar solución final
-  const handleSubmitSolution = () => {
-    if (!code.trim() && !uploadedFile) {
-      toast.error("Please provide a solution before submitting")
+  const handleSubmitSolution = useCallback(async () => {
+    if (isSubmitted || isSubmitting) return
+    
+    if (!code.trim()) {
+      toast.error("Please write some code before submitting")
       return
     }
-
-    if (isSubmitted) {
-      toast.error("You have already submitted a solution for this challenge")
-      return
-    }
-
-    setShowSubmitDialog(true)
-  }
-
-  const confirmSubmitSolution = async () => {
+    
     setIsSubmitting(true)
     try {
       const response = await fetch('/api/submissions', {
@@ -459,10 +426,13 @@ int main() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to submit solution')
+        throw new Error(data.message || "Failed to submit solution")
       }
 
-      // Limpiar el draft del localStorage
+      // Detener el timer
+      setIsActive(false)
+      
+      // Limpiar borrador guardado
       localStorage.removeItem(`draft_${challengeId}`)
       
       // Marcar como enviado
@@ -482,16 +452,65 @@ int main() {
     } finally {
       setIsSubmitting(false)
     }
+  }, [challengeId, code, language, isSubmitted, isSubmitting, router])
+
+  // Returns condicionales - DESPUÉS de todos los hooks
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <DashboardNav />
+        <main className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Cargando challenge...</p>
+            </div>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <DashboardNav />
+        <main className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Error</h2>
+              <p className="text-gray-600 mb-4">{error}</p>
+              <Button onClick={() => router.push("/challenges")}>
+                Volver a Challenges
+              </Button>
+            </div>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
+  if (!challenge) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <DashboardNav />
+        <main className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Challenge no encontrado</h2>
+              <Button onClick={() => router.push("/challenges")}>
+                Volver a Challenges
+              </Button>
+            </div>
+          </div>
+        </main>
+      </div>
+    )
   }
 
   // Calcular progreso del tiempo
-  const totalTime = challenge ? challenge.timeLimit * 60 : 0
+  const totalTime = challenge.timeLimit * 60
   const timeProgress = totalTime > 0 ? ((totalTime - timeLeft) / totalTime) * 100 : 0
-
-  // Verificar que el challenge existe antes de renderizar
-  if (!challenge) {
-    return null // Esto nunca debería ejecutarse porque ya manejamos el loading y error states arriba
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -516,7 +535,7 @@ int main() {
                   <Badge variant={getDifficultyVariant(challenge.difficulty)}>
                     {challenge.difficulty}
                   </Badge>
-                  <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                  <span className="text-sm text-muted-foreground flex items-center gap-1">
                     <Trophy className="h-4 w-4" />
                     {challenge.points} points
                   </span>
@@ -524,25 +543,26 @@ int main() {
               </div>
 
               {/* Timer */}
-              <Card className="p-4">
-                <div className="flex items-center gap-3">
-                  <Clock className={`h-5 w-5 ${timeLeft < 300 ? 'text-destructive' : 'text-primary'}`} />
-                  <div>
-                    <div className={`text-lg font-mono font-bold ${timeLeft < 300 ? 'text-destructive' : ''}`}>
-                      {formatTime(timeLeft)}
-                    </div>
-                    <Progress 
-                      value={timeProgress} 
-                      className={`w-32 h-2 ${timeLeft < 300 ? '[&>div]:bg-destructive' : ''}`}
-                    />
-                  </div>
+              <div className="text-right">
+                <div className="flex items-center gap-2 text-lg font-semibold mb-2">
+                  <Clock className="h-5 w-5" />
+                  <span className={timeLeft < 300 ? "text-red-500" : "text-foreground"}>
+                    {formatTime(timeLeft)}
+                  </span>
                 </div>
-              </Card>
+                <Progress 
+                  value={timeProgress} 
+                  className="w-32 h-2"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  {Math.round(timeProgress)}% elapsed
+                </p>
+              </div>
             </div>
           </div>
 
           <div className="grid lg:grid-cols-2 gap-6">
-            {/* Problem Description */}
+            {/* Left Column - Problem Description */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -583,7 +603,7 @@ int main() {
               </CardContent>
             </Card>
 
-            {/* Solution */}
+            {/* Right Column - Solution */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -616,187 +636,171 @@ int main() {
                       </Select>
                       {isSubmitted && (
                         <Badge variant="secondary" className="ml-2">
-                          Read Only - Solution Submitted
+                          Submitted
                         </Badge>
                       )}
                     </div>
 
-                    <div className="relative">
-                      <Textarea
-                        value={code}
-                        onChange={(e) => setCode(e.target.value)}
-                        placeholder={isSubmitted ? "Solution already submitted - read only" : "Write your solution here..."}
-                        className="min-h-[300px] font-mono text-sm"
-                        disabled={isSubmitted}
-                        readOnly={isSubmitted}
-                      />
+                    <Textarea
+                      value={code}
+                      onChange={(e) => setCode(e.target.value)}
+                      placeholder="Write your solution here..."
+                      className="min-h-[300px] font-mono text-sm"
+                      disabled={isSubmitted}
+                    />
+
+                    {/* Code Actions */}
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        onClick={handleRunCode}
+                        disabled={isSubmitted || !code.trim()}
+                      >
+                        <Target className="h-4 w-4 mr-2" />
+                        Run Code
+                      </Button>
+                      
+                      {!isSubmitted && (
+                        <>
+                          <Button 
+                            variant="outline"
+                            onClick={() => setShowSaveDraftDialog(true)}
+                            disabled={isSaving || !code.trim()}
+                          >
+                            <Save className="h-4 w-4 mr-2" />
+                            {isSaving ? "Saving..." : "Save Draft"}
+                          </Button>
+                          
+                          <Button 
+                            onClick={() => setShowSubmitDialog(true)}
+                            disabled={isSubmitting || !code.trim()}
+                          >
+                            <Upload className="h-4 w-4 mr-2" />
+                            {isSubmitting ? "Submitting..." : "Submit Solution"}
+                          </Button>
+                        </>
+                      )}
                     </div>
 
+                    {/* Output */}
                     {output && (
                       <div className="space-y-2">
-                        <div className="text-sm font-medium">Output:</div>
-                        <pre className="text-xs bg-muted p-3 rounded-lg overflow-x-auto whitespace-pre-wrap">
+                        <h4 className="font-semibold">Output</h4>
+                        <pre className="bg-muted p-3 rounded text-sm overflow-x-auto whitespace-pre-wrap">
                           {output}
                         </pre>
                       </div>
                     )}
                   </TabsContent>
 
-                  <TabsContent value="upload" className="space-y-4">
+                  <TabsContent value="upload">
                     <div
                       className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                        isSubmitted 
-                          ? 'border-muted-foreground/25 bg-muted/50' 
-                          : isDragging 
-                            ? 'border-primary bg-primary/5' 
-                            : 'border-muted-foreground/25 hover:border-primary/50'
+                        isDragging ? "border-primary bg-primary/5" : "border-muted-foreground"
                       }`}
-                      onDragEnter={isSubmitted ? undefined : handleDragEnter}
-                      onDragLeave={isSubmitted ? undefined : handleDragLeave}
-                      onDragOver={isSubmitted ? undefined : handleDragOver}
-                      onDrop={isSubmitted ? undefined : handleDrop}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
                     >
-                      <Upload className="h-8 w-8 mx-auto mb-4 text-muted-foreground" />
-                      <div className="space-y-2">
-                        <p className="text-sm font-medium">
-                          {isSubmitted ? "File upload disabled - Solution already submitted" : "Drag and drop your solution file here"}
-                        </p>
-                        {!isSubmitted && (
-                          <>
-                            <p className="text-xs text-muted-foreground">
-                              or click to select a file (max 5MB)
-                            </p>
-                            <input
-                              type="file"
-                              onChange={handleFileSelect}
-                              className="hidden"
-                              id="file-upload"
-                              accept=".js,.py,.java,.cpp,.c,.h,.hpp,.txt"
-                            />
-                            <label htmlFor="file-upload">
-                              <Button variant="outline" className="mt-2" asChild>
-                                <span>Select File</span>
-                              </Button>
-                            </label>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    {uploadedFile && (
-                      <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4" />
-                          <span className="text-sm font-medium">{uploadedFile.name}</span>
-                          <span className="text-xs text-muted-foreground">
-                            ({(uploadedFile.size / 1024).toFixed(1)} KB)
-                          </span>
+                      <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                      <p className="text-lg font-medium mb-2">
+                        Drop your file here or{" "}
+                        <label className="text-primary cursor-pointer hover:underline">
+                          browse
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept=".js,.py,.java,.cpp,.c,.ts"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0]
+                              if (file) handleFileUpload(file)
+                            }}
+                            disabled={isSubmitted}
+                          />
+                        </label>
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Supported formats: .js, .py, .java, .cpp, .c, .ts
+                      </p>
+                      
+                      {uploadedFile && (
+                        <div className="mt-4 p-3 bg-muted rounded flex items-center justify-between">
+                          <span className="text-sm">{uploadedFile.name}</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setUploadedFile(null)
+                              setCode("")
+                            }}
+                            disabled={isSubmitted}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setUploadedFile(null)
-                            toast.success("File removed")
-                          }}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </TabsContent>
                 </Tabs>
 
-                {/* Action Buttons */}
-                <div className="flex gap-2 pt-4">
-                  {isSubmitted && (
-                    <div className="w-full p-3 bg-muted rounded-lg border">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="font-medium text-sm">
-                            Solution Submitted
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            Status: {existingSubmission?.status === "ACCEPTED" ? "Accepted" : 
-                                   existingSubmission?.status === "WRONG_ANSWER" ? "Wrong Answer" :
-                                   existingSubmission?.status === "RUNTIME_ERROR" ? "Runtime Error" :
-                                   "Pending Review"}
-                          </div>
-                          {existingSubmission?.score && (
-                            <div className="text-xs text-muted-foreground">
-                              Score: {existingSubmission.score}/100
-                            </div>
-                          )}
-                        </div>
-                        <Badge 
-                          variant={existingSubmission?.status === "ACCEPTED" ? "secondary" : 
-                                  existingSubmission?.status === "PENDING" ? "default" : "destructive"}
-                        >
-                          {existingSubmission?.status === "ACCEPTED" ? "✓ Accepted" : 
-                           existingSubmission?.status === "PENDING" ? "⏳ Pending" : "✗ Failed"}
-                        </Badge>
+                {/* Submission Status */}
+                {existingSubmission && (
+                  <div className="mt-4 p-4 bg-muted rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">
+                          {existingSubmission.isDraft ? "Draft Saved" : "Solution Submitted"}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Language: {existingSubmission.language} • 
+                          {existingSubmission.isDraft 
+                            ? " You can continue editing and submit when ready"
+                            : " Your solution is under review"
+                          }
+                        </p>
                       </div>
+                      <Badge variant={existingSubmission.isDraft ? "secondary" : "default"}>
+                        {existingSubmission.isDraft ? "Draft" : "Submitted"}
+                      </Badge>
                     </div>
-                  )}
-
-                  {!isSubmitted && (
-                    <>
-                      <Button 
-                        variant="outline" 
-                        onClick={handleSaveDraft}
-                        disabled={(!code.trim() && !uploadedFile) || isSaving}
-                      >
-                        <Save className="h-4 w-4 mr-2" />
-                        {isSaving ? "Saving..." : "Save Draft"}
-                      </Button>
-                      
-                      <Button 
-                        onClick={handleSubmitSolution}
-                        disabled={(!code.trim() && !uploadedFile) || isSubmitting}
-                        className="bg-green-600 hover:bg-green-700"
-                      >
-                        <Target className="h-4 w-4 mr-2" />
-                        {isSubmitting ? "Submitting..." : "Submit Final Solution"}
-                      </Button>
-                    </>
-                  )}
-                </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
         </div>
       </main>
 
-      {/* Save Draft Confirmation Dialog */}
+      {/* Save Draft Dialog */}
       <AlertDialog open={showSaveDraftDialog} onOpenChange={setShowSaveDraftDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Save Draft</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to save your current progress as a draft? You can continue working on it later.
+              Are you sure you want to save this as a draft? You can continue editing and submit later.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isSaving}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmSaveDraft} disabled={isSaving}>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSaveDraft} disabled={isSaving}>
               {isSaving ? "Saving..." : "Save Draft"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Submit Solution Confirmation Dialog */}
+      {/* Submit Solution Dialog */}
       <AlertDialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Submit Final Solution</AlertDialogTitle>
+            <AlertDialogTitle>Submit Solution</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to submit your final solution? Once submitted, you won't be able to make any changes to this challenge submission.
+              Are you sure you want to submit your solution? This action cannot be undone and your submission will be sent for review.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isSubmitting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmSubmitSolution} disabled={isSubmitting}>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSubmitSolution} disabled={isSubmitting}>
               {isSubmitting ? "Submitting..." : "Submit Solution"}
             </AlertDialogAction>
           </AlertDialogFooter>

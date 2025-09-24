@@ -14,33 +14,80 @@ export async function GET(
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
-    // Verify user exists and is a CREATOR
+    // Verify user exists
     const user = await prisma.user.findUnique({
       where: { id: userData.user.id },
       select: { id: true, role: true }
     })
 
-    if (!user || user.role !== "CREATOR") {
-      return NextResponse.json({ message: "Forbidden - Creator access required" }, { status: 403 })
+    if (!user) {
+      return NextResponse.json({ message: "User not found" }, { status: 404 })
     }
 
-    const challenge = await prisma.challenge.findUnique({
-      where: { 
-        id: params.id,
-        creatorId: user.id // Ensure the creator owns this challenge
-      },
-      include: {
-        testCases: {
-          orderBy: { createdAt: "asc" }
+    const isCreator = user.role === "CREATOR"
+    
+    let challenge;
+    
+    if (isCreator) {
+      // For creators, allow access to their own challenges (any status)
+      challenge = await prisma.challenge.findUnique({
+        where: { 
+          id: params.id,
+          creatorId: user.id // Creators can only see their own challenges
         },
-        _count: {
-          select: {
-            submissions: true,
-            testCases: true
+        include: {
+          testCases: {
+            orderBy: { createdAt: "asc" }
+          },
+          creator: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          },
+          _count: {
+            select: {
+              submissions: true,
+              testCases: true
+            }
           }
         }
-      }
-    })
+      })
+    } else {
+      // For other users, only allow access to public challenges (ACTIVE or COMPLETED)
+      challenge = await prisma.challenge.findFirst({
+        where: {
+          id: params.id,
+          status: { in: ["ACTIVE", "COMPLETED"] }
+        },
+        include: {
+          // For participants, only include public test cases (for examples/hints)
+          testCases: {
+            select: {
+              id: true,
+              input: true,
+              expectedOutput: true,
+              isPublic: true
+            },
+            where: { isPublic: true },
+            orderBy: { createdAt: "asc" }
+          },
+          creator: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          _count: {
+            select: {
+              submissions: true,
+              testCases: true
+            }
+          }
+        }
+      })
+    }
 
     if (!challenge) {
       return NextResponse.json({ message: "Challenge not found" }, { status: 404 })
