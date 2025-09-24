@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { useRouter, useParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,13 +9,14 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { CalendarIcon, Plus, Trash2, Save, Eye } from "lucide-react"
+import { CalendarIcon, Plus, Trash2, Save, ArrowLeft } from "lucide-react"
 import { DashboardNav } from "@/components/dashboard-nav"
 import { toast } from "sonner"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
+import Link from "next/link"
 
 interface TestCase {
   input: string
@@ -23,10 +24,27 @@ interface TestCase {
   isPublic: boolean
 }
 
-export default function CreateChallengePage() {
+interface Challenge {
+  id: string
+  title: string
+  description: string
+  difficulty: "EASY" | "MEDIUM" | "HARD"
+  points: number
+  timeLimit: number
+  startDate: string
+  endDate: string
+  status: "DRAFT" | "ACTIVE" | "COMPLETED" | "CANCELLED"
+  testCases: TestCase[]
+}
+
+export default function EditChallengePage() {
   const router = useRouter()
-  const [loading, setLoading] = useState(false)
-  const [previewMode, setPreviewMode] = useState(false)
+  const params = useParams()
+  const challengeId = params.id as string
+  
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [challenge, setChallenge] = useState<Challenge | null>(null)
   
   // Form state
   const [formData, setFormData] = useState({
@@ -36,12 +54,62 @@ export default function CreateChallengePage() {
     points: 100,
     timeLimit: 30,
     startDate: new Date(),
-    endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+    endDate: new Date(),
   })
   
   const [testCases, setTestCases] = useState<TestCase[]>([
     { input: "", expectedOutput: "", isPublic: true }
   ])
+
+  useEffect(() => {
+    const fetchChallenge = async () => {
+      try {
+        const response = await fetch(`/api/challenges/${challengeId}`)
+        if (!response.ok) {
+          if (response.status === 404) {
+            toast.error("Challenge not found")
+            router.push("/challenges/manage")
+            return
+          }
+          if (response.status === 403) {
+            toast.error("You don't have permission to edit this challenge")
+            router.push("/challenges/manage")
+            return
+          }
+          throw new Error("Failed to fetch challenge")
+        }
+        
+        const data = await response.json()
+        const challenge = data.challenge
+        
+        setChallenge(challenge)
+        setFormData({
+          title: challenge.title,
+          description: challenge.description,
+          difficulty: challenge.difficulty,
+          points: challenge.points,
+          timeLimit: challenge.timeLimit,
+          startDate: new Date(challenge.startDate),
+          endDate: new Date(challenge.endDate),
+        })
+        
+        if (challenge.testCases && challenge.testCases.length > 0) {
+          setTestCases(challenge.testCases)
+        }
+        
+      } catch (error) {
+        console.error("Error fetching challenge:", error)
+        toast.error("Failed to load challenge")
+        router.push("/challenges/manage")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (challengeId) {
+      fetchChallenge()
+    }
+  }, [challengeId, router])
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({
@@ -109,125 +177,63 @@ export default function CreateChallengePage() {
     return true
   }
 
-  const handleSubmit = async (status: "DRAFT" | "ACTIVE") => {
+  const handleSubmit = async () => {
     if (!validateForm()) return
     
-    setLoading(true)
+    setSaving(true)
     
     try {
       const validTestCases = testCases.filter(tc => tc.input.trim() && tc.expectedOutput.trim())
       
-      const challengeData = {
+      const updateData = {
         ...formData,
-        status,
         testCases: validTestCases
       }
       
-      const response = await fetch("/api/challenges", {
-        method: "POST",
+      const response = await fetch(`/api/challenges/${challengeId}`, {
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(challengeData),
+        body: JSON.stringify(updateData),
       })
       
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.message || "Failed to create challenge")
+        throw new Error(error.message || "Failed to update challenge")
       }
       
-      const result = await response.json()
-      
-      toast.success(`Challenge ${status === "DRAFT" ? "saved as draft" : "published"} successfully!`)
-      router.push(`/challenges/manage`)
+      toast.success("Challenge updated successfully!")
+      router.push("/challenges/manage")
       
     } catch (error) {
-      console.error("Error creating challenge:", error)
-      toast.error(error instanceof Error ? error.message : "Failed to create challenge")
+      console.error("Error updating challenge:", error)
+      toast.error(error instanceof Error ? error.message : "Failed to update challenge")
     } finally {
-      setLoading(false)
+      setSaving(false)
     }
   }
 
-  if (previewMode) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-background">
         <DashboardNav />
         <main className="container mx-auto px-4 py-8">
           <div className="max-w-4xl mx-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h1 className="text-3xl font-bold">Challenge Preview</h1>
-              <Button onClick={() => setPreviewMode(false)} variant="outline">
-                <Save className="h-4 w-4 mr-2" />
-                Back to Edit
-              </Button>
+            <div className="flex items-center justify-center h-96">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading challenge...</p>
+              </div>
             </div>
-            
-            <Card>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-2xl mb-2">{formData.title || "Untitled Challenge"}</CardTitle>
-                    <div className="flex items-center gap-2 mb-4">
-                      <Badge variant={
-                        formData.difficulty === "EASY" ? "secondary" :
-                        formData.difficulty === "MEDIUM" ? "default" : "destructive"
-                      }>
-                        {formData.difficulty || "No difficulty"}
-                      </Badge>
-                      <Badge variant="outline">{formData.points} points</Badge>
-                      <Badge variant="outline">{formData.timeLimit} minutes</Badge>
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="font-semibold mb-2">Description</h3>
-                    <p className="text-muted-foreground whitespace-pre-wrap">
-                      {formData.description || "No description provided"}
-                    </p>
-                  </div>
-                  
-                  {testCases.filter(tc => tc.input.trim() && tc.expectedOutput.trim()).length > 0 && (
-                    <div>
-                      <h3 className="font-semibold mb-4">Test Cases</h3>
-                      <div className="space-y-4">
-                        {testCases
-                          .filter(tc => tc.input.trim() && tc.expectedOutput.trim())
-                          .map((testCase, index) => (
-                            <div key={index} className="border rounded-lg p-4">
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm font-medium">Test Case {index + 1}</span>
-                                {testCase.isPublic && <Badge variant="secondary">Public</Badge>}
-                              </div>
-                              <div className="grid md:grid-cols-2 gap-4">
-                                <div>
-                                  <Label className="text-xs">Input:</Label>
-                                  <pre className="bg-muted p-3 rounded text-sm mt-1">
-                                    <code>{testCase.input}</code>
-                                  </pre>
-                                </div>
-                                <div>
-                                  <Label className="text-xs">Expected Output:</Label>
-                                  <pre className="bg-muted p-3 rounded text-sm mt-1">
-                                    <code>{testCase.expectedOutput}</code>
-                                  </pre>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </main>
       </div>
     )
+  }
+
+  if (!challenge) {
+    return null
   }
 
   return (
@@ -235,15 +241,17 @@ export default function CreateChallengePage() {
       <DashboardNav />
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">Create New Challenge</h1>
-              <p className="text-muted-foreground">Design a coding challenge for participants to solve</p>
+          <div className="mb-6">
+            <Link href="/challenges/manage" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-4">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Manage Challenges
+            </Link>
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold mb-2">Edit Challenge</h1>
+                <p className="text-muted-foreground">Update your challenge details</p>
+              </div>
             </div>
-            <Button onClick={() => setPreviewMode(true)} variant="outline">
-              <Eye className="h-4 w-4 mr-2" />
-              Preview
-            </Button>
           </div>
 
           <div className="grid lg:grid-cols-3 gap-6">
@@ -253,7 +261,7 @@ export default function CreateChallengePage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Basic Information</CardTitle>
-                  <CardDescription>Enter the basic details of your challenge</CardDescription>
+                  <CardDescription>Update the basic details of your challenge</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
@@ -323,7 +331,7 @@ export default function CreateChallengePage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle>Test Cases</CardTitle>
-                      <CardDescription>Define input/output examples for your challenge</CardDescription>
+                      <CardDescription>Update input/output examples for your challenge</CardDescription>
                     </div>
                     <Button onClick={addTestCase} size="sm">
                       <Plus className="h-4 w-4 mr-2" />
@@ -387,11 +395,29 @@ export default function CreateChallengePage() {
 
             {/* Sidebar */}
             <div className="space-y-6">
+              {/* Challenge Status */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Challenge Status</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-2 mb-4">
+                    <Badge variant={
+                      challenge.status === "ACTIVE" ? "default" :
+                      challenge.status === "DRAFT" ? "secondary" : "outline"
+                    }>
+                      {challenge.status}
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">Current status</span>
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Schedule */}
               <Card>
                 <CardHeader>
                   <CardTitle>Schedule</CardTitle>
-                  <CardDescription>Set when your challenge will be available</CardDescription>
+                  <CardDescription>Update when your challenge will be available</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
@@ -451,24 +477,24 @@ export default function CreateChallengePage() {
               {/* Actions */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Publish Options</CardTitle>
+                  <CardTitle>Save Changes</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <Button
-                    onClick={() => handleSubmit("DRAFT")}
-                    disabled={loading}
-                    variant="outline"
+                    onClick={handleSubmit}
+                    disabled={saving}
                     className="w-full"
                   >
-                    {loading ? "Saving..." : "Save as Draft"}
+                    <Save className="h-4 w-4 mr-2" />
+                    {saving ? "Saving..." : "Save Changes"}
                   </Button>
                   
                   <Button
-                    onClick={() => handleSubmit("ACTIVE")}
-                    disabled={loading}
+                    onClick={() => router.push("/challenges/manage")}
+                    variant="outline"
                     className="w-full"
                   >
-                    {loading ? "Publishing..." : "Publish Challenge"}
+                    Cancel
                   </Button>
                 </CardContent>
               </Card>

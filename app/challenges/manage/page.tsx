@@ -1,37 +1,31 @@
-import { cookies } from "next/headers"
-import { redirect } from "next/navigation"
-import { createServerClient } from "@/lib/supabase/server"
+"use client"
+
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Plus, Edit, Trash2, Eye, Users, BarChart3, Settings } from "lucide-react"
+import { ArrowLeft, Plus, Edit, Trash2, Eye, Users, BarChart3, Settings, Clock, Trophy } from "lucide-react"
 import Link from "next/link"
 import { DashboardNav } from "@/components/dashboard-nav"
+import { toast } from "sonner"
 
-async function checkCreatorAccess() {
-  const supabase = await createServerClient()
-  const { data: userData, error } = await supabase.auth.getUser()
-  
-  if (error || !userData?.user) {
-    redirect("/auth/login")
+interface Challenge {
+  id: string
+  title: string
+  description: string
+  difficulty: "EASY" | "MEDIUM" | "HARD"
+  points: number
+  timeLimit: number
+  startDate: string
+  endDate: string
+  status: "DRAFT" | "ACTIVE" | "COMPLETED" | "CANCELLED"
+  createdAt: string
+  updatedAt: string
+  _count: {
+    submissions: number
+    testCases: number
   }
-
-  // Verificar que el usuario existe en la base de datos y es CREATOR
-  const { prisma } = await import("@/lib/prisma")
-  const user = await prisma.user.findUnique({
-    where: { id: userData.user.id },
-    select: { role: true, name: true, email: true }
-  })
-
-  if (!user) {
-    redirect("/auth/login")
-  }
-
-  if (user.role !== "CREATOR") {
-    redirect("/dashboard")
-  }
-
-  return { user, authUser: userData.user }
 }
 
 // Mock data para challenges creados por el usuario
@@ -118,14 +112,128 @@ function getStatusVariant(status: string): "default" | "secondary" | "destructiv
   }
 }
 
-export default async function ManageChallengesPage() {
-  const { user, authUser } = await checkCreatorAccess()
+export default function ManageChallengesPage() {
+  const router = useRouter()
+  const [challenges, setChallenges] = useState<Challenge[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const activeChallenges = mockCreatedChallenges.filter(c => c.status === "ACTIVE")
-  const draftChallenges = mockCreatedChallenges.filter(c => c.status === "DRAFT")
-  const completedChallenges = mockCreatedChallenges.filter(c => c.status === "COMPLETED")
-  const totalSubmissions = mockCreatedChallenges.reduce((sum, c) => sum + c.totalSubmissions, 0)
-  const totalParticipants = mockCreatedChallenges.reduce((sum, c) => sum + c.participants, 0)
+  useEffect(() => {
+    const fetchChallenges = async () => {
+      try {
+        const response = await fetch("/api/challenges")
+        if (!response.ok) {
+          if (response.status === 403) {
+            router.push("/dashboard")
+            return
+          }
+          throw new Error("Failed to fetch challenges")
+        }
+        
+        const data = await response.json()
+        setChallenges(data.challenges)
+      } catch (error) {
+        console.error("Error fetching challenges:", error)
+        toast.error("Failed to load challenges")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchChallenges()
+  }, [])
+
+  const handlePublishChallenge = async (challengeId: string) => {
+    try {
+      const response = await fetch(`/api/challenges/${challengeId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: "ACTIVE" }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to publish challenge")
+      }
+
+      // Update local state
+      setChallenges(prev => 
+        prev.map(challenge => 
+          challenge.id === challengeId 
+            ? { ...challenge, status: "ACTIVE" as const }
+            : challenge
+        )
+      )
+
+      toast.success("Challenge published successfully!")
+    } catch (error) {
+      console.error("Error publishing challenge:", error)
+      toast.error("Failed to publish challenge")
+    }
+  }
+
+  const handleDeleteChallenge = async (challengeId: string) => {
+    if (!confirm("Are you sure you want to delete this challenge? This action cannot be undone.")) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/challenges/${challengeId}`, {
+        method: "DELETE",
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to delete challenge")
+      }
+
+      // Update local state
+      setChallenges(prev => prev.filter(challenge => challenge.id !== challengeId))
+
+      toast.success("Challenge deleted successfully!")
+    } catch (error) {
+      console.error("Error deleting challenge:", error)
+      toast.error("Failed to delete challenge")
+    }
+  }
+
+  const handleEditChallenge = (challengeId: string) => {
+    router.push(`/challenges/${challengeId}/edit`)
+  }
+
+  const handleViewSubmissions = (challengeId: string) => {
+    router.push(`/challenges/${challengeId}/submissions`)
+  }
+
+  const handleViewAnalytics = (challengeId: string) => {
+    router.push(`/challenges/${challengeId}/analytics`)
+  }
+
+  const handleChallengeSettings = (challengeId: string) => {
+    router.push(`/challenges/${challengeId}/settings`)
+  }
+
+  const activeChallenges = challenges.filter(c => c.status === "ACTIVE")
+  const draftChallenges = challenges.filter(c => c.status === "DRAFT")
+  const completedChallenges = challenges.filter(c => c.status === "COMPLETED")
+  const totalSubmissions = challenges.reduce((sum, c) => sum + c._count.submissions, 0)
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <DashboardNav />
+        <main className="container mx-auto px-4 py-8">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex items-center justify-center h-96">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading challenges...</p>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -194,8 +302,8 @@ export default async function ManageChallengesPage() {
                 <Users className="h-4 w-4 text-purple-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{totalParticipants}</div>
-                <p className="text-xs text-muted-foreground">Unique participants</p>
+                <div className="text-2xl font-bold">{challenges.length}</div>
+                <p className="text-xs text-muted-foreground">Total created</p>
               </CardContent>
             </Card>
           </div>
@@ -240,14 +348,25 @@ export default async function ManageChallengesPage() {
                           </div>
                           
                           <div className="flex gap-2">
-                            <Button size="sm" variant="outline">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleEditChallenge(challenge.id)}
+                            >
                               <Edit className="h-4 w-4 mr-2" />
                               Edit
                             </Button>
-                            <Button size="sm">
+                            <Button 
+                              size="sm"
+                              onClick={() => handlePublishChallenge(challenge.id)}
+                            >
                               Publish
                             </Button>
-                            <Button size="sm" variant="destructive">
+                            <Button 
+                              size="sm" 
+                              variant="destructive"
+                              onClick={() => handleDeleteChallenge(challenge.id)}
+                            >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
@@ -304,42 +423,58 @@ export default async function ManageChallengesPage() {
                               <p className="font-medium">{challenge.timeLimit} min</p>
                             </div>
                             <div>
-                              <span className="text-muted-foreground">Participants:</span>
-                              <p className="font-medium">{challenge.participants}</p>
+                              <span className="text-muted-foreground">Submissions:</span>
+                              <p className="font-medium">{challenge._count.submissions}</p>
                             </div>
                             <div>
-                              <span className="text-muted-foreground">Avg Score:</span>
-                              <p className="font-medium">{challenge.avgScore}%</p>
+                              <span className="text-muted-foreground">Test Cases:</span>
+                              <p className="font-medium">{challenge._count.testCases}</p>
                             </div>
                           </div>
 
                           <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
-                              <span className="text-muted-foreground">Total Submissions:</span>
-                              <p className="font-medium">{challenge.totalSubmissions}</p>
+                              <span className="text-muted-foreground">Created:</span>
+                              <p className="font-medium">{new Date(challenge.createdAt).toLocaleDateString()}</p>
                             </div>
                             <div>
-                              <span className="text-muted-foreground">Accepted:</span>
-                              <p className="font-medium text-green-600">{challenge.acceptedSubmissions}</p>
+                              <span className="text-muted-foreground">Status:</span>
+                              <p className="font-medium">{challenge.status}</p>
                             </div>
                           </div>
                         </div>
                       </div>
 
                       <div className="flex gap-3">
-                        <Button size="sm" variant="outline">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleViewAnalytics(challenge.id)}
+                        >
                           <BarChart3 className="h-4 w-4 mr-2" />
                           View Analytics
                         </Button>
-                        <Button size="sm" variant="outline">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleViewSubmissions(challenge.id)}
+                        >
                           <Users className="h-4 w-4 mr-2" />
                           View Submissions
                         </Button>
-                        <Button size="sm" variant="outline">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleEditChallenge(challenge.id)}
+                        >
                           <Edit className="h-4 w-4 mr-2" />
                           Edit
                         </Button>
-                        <Button size="sm" variant="outline">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleChallengeSettings(challenge.id)}
+                        >
                           <Settings className="h-4 w-4 mr-2" />
                           Settings
                         </Button>
@@ -383,10 +518,10 @@ export default async function ManageChallengesPage() {
                           </div>
                           
                           <div className="grid grid-cols-4 gap-4 text-sm text-muted-foreground">
-                            <span>Submissions: {challenge.totalSubmissions}</span>
-                            <span>Accepted: {challenge.acceptedSubmissions}</span>
-                            <span>Participants: {challenge.participants}</span>
-                            <span>Avg Score: {challenge.avgScore}%</span>
+                            <span>Submissions: {challenge._count.submissions}</span>
+                            <span>Test Cases: {challenge._count.testCases}</span>
+                            <span>Points: {challenge.points}</span>
+                            <span>Time: {challenge.timeLimit} min</span>
                           </div>
                         </div>
                         

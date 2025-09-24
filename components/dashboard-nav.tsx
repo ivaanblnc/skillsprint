@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Code2, Trophy, Target, LogOut, Settings, Menu, X, Gavel } from "lucide-react"
+import { Code2, Trophy, Target, LogOut, Settings, Menu, X, Gavel, Plus, FolderOpen } from "lucide-react"
 
 export function DashboardNav() {
   const router = useRouter()
@@ -34,6 +34,14 @@ export function DashboardNav() {
     // Add judge-specific navigation if user is a judge
     if (userInfo?.role === 'JUDGE') {
       baseNavigation.splice(2, 0, { name: "Judge Panel", href: "/judge/challenges", icon: Gavel })
+    }
+    
+    // Add creator-specific navigation if user is a creator
+    if (userInfo?.role === 'CREATOR') {
+      baseNavigation.splice(2, 0, 
+        { name: "Create Challenge", href: "/challenges/create", icon: Plus },
+        { name: "My Challenges", href: "/challenges/manage", icon: FolderOpen }
+      )
     }
     
     return baseNavigation
@@ -179,6 +187,22 @@ export function DashboardNav() {
                       Judge Panel
                     </Link>
                   </DropdownMenuItem>
+                )}
+                {userInfo?.role === 'CREATOR' && (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href="/challenges/create" className="flex items-center">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Create Challenge
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/challenges/manage" className="flex items-center">
+                        <FolderOpen className="mr-2 h-4 w-4" />
+                        My Challenges
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
                 )}
                 <DropdownMenuItem asChild>
                   <Link href="/profile" className="flex items-center">
