@@ -5,7 +5,7 @@ import { useParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Download, Eye, User, Clock, CheckCircle, AlertCircle, Clock as ClockIcon } from "lucide-react"
+import { ArrowLeft, Download, User, Clock, CheckCircle, AlertCircle, Clock as ClockIcon } from "lucide-react"
 import Link from "next/link"
 import { DashboardNav } from "@/components/dashboard-nav"
 import { toast } from "sonner"
@@ -279,12 +279,6 @@ export default function ChallengeSubmissionsPage() {
                             </div>
 
                             <div className="flex gap-2">
-                              {submission.code && (
-                                <Button size="sm" variant="outline">
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  View Code
-                                </Button>
-                              )}
                               {submission.fileUrl && (
                                 <Button size="sm" variant="outline">
                                   <Download className="h-4 w-4 mr-2" />
