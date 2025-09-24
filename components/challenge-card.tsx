@@ -66,6 +66,7 @@ export function ChallengeCard({ challenge }: ChallengeCardProps) {
 
     const statusConfig = {
       ACCEPTED: { icon: CheckCircle, variant: "secondary" as const, text: "Accepted", color: "text-green-600" },
+      REJECTED: { icon: AlertCircle, variant: "destructive" as const, text: "Rejected", color: "text-red-600" },
       PENDING: { icon: ClockIcon, variant: "default" as const, text: "Pending Review", color: "text-yellow-600" },
       WRONG_ANSWER: { icon: AlertCircle, variant: "destructive" as const, text: "Wrong Answer", color: "text-red-600" },
       RUNTIME_ERROR: { icon: AlertCircle, variant: "destructive" as const, text: "Runtime Error", color: "text-red-600" },
@@ -154,7 +155,7 @@ export function ChallengeCard({ challenge }: ChallengeCardProps) {
                     View Details
                   </Button>
                 </Link>
-                {/* Solo mostrar "Improve Solution" para borradores o submissions fallidas */}
+                {/* Solo mostrar botones de acción según el estado de la submission */}
                 {((submission as any).isDraft || 
                  (submission.status === "WRONG_ANSWER" || 
                   submission.status === "RUNTIME_ERROR" || 
@@ -165,6 +166,19 @@ export function ChallengeCard({ challenge }: ChallengeCardProps) {
                       {(submission as any).isDraft ? "Continue Draft" : "Improve Solution"}
                     </Button>
                   </Link>
+                )}
+                {/* Para submissions aceptadas, mostrar un botón indicativo */}
+                {submission.status === "ACCEPTED" && (
+                  <Button size="sm" variant="secondary" disabled>
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    Completed
+                  </Button>
+                )}
+                {/* Para submissions pendientes o rechazadas, solo mostrar el estado */}
+                {(submission.status === "PENDING" || submission.status === "REJECTED") && (
+                  <span className="text-xs text-muted-foreground px-2 py-1">
+                    See details for status
+                  </span>
                 )}
               </div>
             ) : (

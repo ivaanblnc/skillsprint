@@ -2,6 +2,9 @@ import { prisma } from "@/lib/prisma"
 import { DashboardNav } from "@/components/dashboard-nav"
 import { ChallengesList } from "@/components/challenges-list"
 
+// Revalidate this page every 30 seconds to show updated submission statuses
+export const revalidate = 30
+
 async function getChallenges() {
   try {
     const challenges = await prisma.challenge.findMany({

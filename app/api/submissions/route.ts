@@ -172,6 +172,22 @@ export async function GET(req: NextRequest) {
             difficulty: true,
             points: true
           }
+        },
+        reviewedBy: {
+          select: {
+            name: true,
+            email: true
+          }
+        },
+        feedbacks: {
+          select: {
+            comment: true,
+            rating: true,
+            createdAt: true
+          },
+          orderBy: {
+            createdAt: 'desc'
+          }
         }
       }
     })

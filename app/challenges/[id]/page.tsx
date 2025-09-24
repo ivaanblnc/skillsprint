@@ -1,6 +1,9 @@
 import { notFound } from "next/navigation"
 import { createServerClient } from "@/lib/supabase/server"
 import { prisma } from "@/lib/prisma"
+
+// Revalidate this page every 30 seconds to show updated submission statuses
+export const revalidate = 30
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -66,6 +69,24 @@ async function getChallengeWithSubmission(challengeId: string, userId?: string) 
             challengeId,
             userId
           }
+        },
+        include: {
+          reviewedBy: {
+            select: {
+              name: true,
+              email: true
+            }
+          },
+          feedbacks: {
+            select: {
+              comment: true,
+              rating: true,
+              createdAt: true
+            },
+            orderBy: {
+              createdAt: 'desc'
+            }
+          }
         }
       })
     }
@@ -104,6 +125,7 @@ export default async function ChallengePage({ params }: { params: { id: string }
     
     const statusConfig = {
       ACCEPTED: { icon: CheckCircle, variant: "secondary" as const, text: "Solution Accepted", color: "text-green-600" },
+      REJECTED: { icon: AlertCircle, variant: "destructive" as const, text: "Solution Rejected", color: "text-red-600" },
       PENDING: { icon: ClockIcon, variant: "default" as const, text: "Pending Review", color: "text-yellow-600" },
       WRONG_ANSWER: { icon: AlertCircle, variant: "destructive" as const, text: "Wrong Answer", color: "text-red-600" },
       RUNTIME_ERROR: { icon: AlertCircle, variant: "destructive" as const, text: "Runtime Error", color: "text-red-600" },
@@ -302,19 +324,67 @@ export default async function ChallengePage({ params }: { params: { id: string }
                 <CardContent className="space-y-3">
                   {/* Show submission status card if user has submitted */}
                   {userSubmission && submissionStatus && (
-                    <div className="p-3 bg-muted rounded-lg border">
-                      <div className="flex items-center gap-2 mb-2">
+                    <div className="p-4 bg-muted/50 rounded-lg border">
+                      <div className="flex items-center gap-2 mb-3">
                         <submissionStatus.icon className={`h-4 w-4 ${submissionStatus.color}`} />
                         <span className="font-medium text-sm">{submissionStatus.text}</span>
                       </div>
-                      {userSubmission.score && (
-                        <div className="text-xs text-muted-foreground">
-                          Score: {userSubmission.score}/100
+                      
+                      <div className="space-y-2 text-xs text-muted-foreground">
+                        <div className="flex justify-between">
+                          <span>Score:</span>
+                          <span className={`font-medium ${
+                            userSubmission.score !== null ? 
+                              (userSubmission.score >= challenge.points * 0.7 ? 'text-green-600' : 
+                               userSubmission.score >= challenge.points * 0.4 ? 'text-yellow-600' : 'text-red-600') 
+                              : ''
+                          }`}>
+                            {userSubmission.score !== null ? `${userSubmission.score}/${challenge.points}` : 'Not scored yet'}
+                          </span>
+                        </div>
+                        
+                        <div className="flex justify-between">
+                          <span>Submitted:</span>
+                          <span>{new Date(userSubmission.submittedAt).toLocaleDateString()}</span>
+                        </div>
+                        
+                        {userSubmission.reviewedAt && (
+                          <div className="flex justify-between">
+                            <span>Reviewed:</span>
+                            <span>{new Date(userSubmission.reviewedAt).toLocaleDateString()}</span>
+                          </div>
+                        )}
+                        
+                        {userSubmission.reviewedBy && (
+                          <div className="flex justify-between">
+                            <span>Reviewed by:</span>
+                            <span>{userSubmission.reviewedBy.name || userSubmission.reviewedBy.email?.split('@')[0]}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Judge Feedback */}
+                      {userSubmission.feedbacks && userSubmission.feedbacks.length > 0 && (
+                        <div className="mt-4 pt-3 border-t border-border/50">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-medium text-muted-foreground">Judge Feedback:</span>
+                              {userSubmission.feedbacks[0].rating && (
+                                <div className="flex">
+                                  {[...Array(5)].map((_, i) => (
+                                    <span key={i} className={`text-xs ${i < userSubmission.feedbacks[0].rating ? 'text-yellow-400' : 'text-gray-300'}`}>
+                                      ★
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground bg-background/50 rounded p-2 border">
+                              {userSubmission.feedbacks[0].comment}
+                            </p>
+                          </div>
                         </div>
                       )}
-                      <div className="text-xs text-muted-foreground">
-                        Submitted: {new Date(userSubmission.submittedAt).toLocaleDateString()}
-                      </div>
                     </div>
                   )}
 
@@ -334,12 +404,7 @@ export default async function ChallengePage({ params }: { params: { id: string }
                       </Button>
                     </AuthRequiredTrigger>
                   )}
-                  {userSubmission && userSubmission.score !== null && (
-                    <Button disabled className="w-full text-green-600">
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Challenge Completed
-                    </Button>
-                  )}
+
                   <Link href="/challenges" className="block">
                     <Button variant="outline" className="w-full bg-transparent">
                       Back to Challenges
