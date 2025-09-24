@@ -51,6 +51,7 @@ model User {
   sessions    Session[]
   challenges  Challenge[]
   submissions Submission[]
+  reviewedSubmissions Submission[] @relation("ReviewedSubmissions")
   feedbacks   Feedback[]
 }
 
@@ -96,17 +97,21 @@ model Submission {
   id          String           @id @default(cuid())
   challengeId String
   userId      String
-  code        String           @db.Text
-  language    String
+  code        String?          @db.Text
+  language    String?
+  fileUrl     String?          // For file submissions
   status      SubmissionStatus @default(PENDING)
   score       Int?
   executionTime Int?           // in milliseconds
   memory      Int?             // in KB
   isDraft     Boolean          @default(true)
   submittedAt DateTime         @default(now())
+  reviewedAt  DateTime?
+  reviewedById String?
 
   challenge Challenge  @relation(fields: [challengeId], references: [id])
   user      User       @relation(fields: [userId], references: [id])
+  reviewedBy User?      @relation("ReviewedSubmissions", fields: [reviewedById], references: [id])
   feedbacks Feedback[]
 
   @@unique([challengeId, userId])
@@ -128,6 +133,7 @@ enum Role {
   CREATOR
   PARTICIPANT
   JUDGE
+  ADMIN
 }
 
 enum ChallengeDifficulty {
@@ -146,6 +152,7 @@ enum ChallengeStatus {
 enum SubmissionStatus {
   PENDING
   ACCEPTED
+  REJECTED
   WRONG_ANSWER
   TIME_LIMIT_EXCEEDED
   RUNTIME_ERROR

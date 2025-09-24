@@ -34,48 +34,69 @@ async function checkJudgeAccess() {
   return { user, authUser: userData.user }
 }
 
-// Mock data para challenges asignados al judge
-const mockAssignedChallenges = [
-  {
-    id: "1",
-    title: "Two Sum Problem",
-    difficulty: "EASY",
-    points: 50,
-    creator: "Ana Martínez",
-    status: "ACTIVE",
-    totalSubmissions: 24,
-    pendingReviews: 8,
-    avgScore: 85,
-    timeLimit: 30,
-    description: "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target."
-  },
-  {
-    id: "2", 
-    title: "Binary Search Implementation",
-    difficulty: "MEDIUM",
-    points: 100,
-    creator: "Luis García",
-    status: "ACTIVE",
-    totalSubmissions: 16,
-    pendingReviews: 5,
-    avgScore: 72,
-    timeLimit: 45,
-    description: "Implement binary search algorithm that finds the position of a target value within a sorted array."
-  },
-  {
-    id: "3",
-    title: "Graph Traversal Algorithm",
-    difficulty: "HARD", 
-    points: 200,
-    creator: "Sofia López",
-    status: "COMPLETED",
-    totalSubmissions: 8,
-    pendingReviews: 0,
-    avgScore: 58,
-    timeLimit: 90,
-    description: "Implement both depth-first search (DFS) and breadth-first search (BFS) algorithms for graph traversal."
-  }
-]
+async function getJudgeChallenges() {
+  const { prisma } = await import("@/lib/prisma")
+  
+  // Get all challenges with submission data
+  const challenges = await prisma.challenge.findMany({
+    include: {
+      creator: {
+        select: {
+          name: true,
+          email: true
+        }
+      },
+      submissions: {
+        select: {
+          id: true,
+          status: true,
+          score: true,
+          submittedAt: true
+        }
+      },
+      _count: {
+        select: {
+          submissions: true
+        }
+      }
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
+  })
+
+  // Process challenges data
+  return challenges.map(challenge => {
+    const totalSubmissions = challenge._count.submissions
+    const pendingReviews = challenge.submissions.filter(s => s.status === 'PENDING').length
+    const acceptedSubmissions = challenge.submissions.filter(s => s.status === 'ACCEPTED')
+    const submissionsWithScores = challenge.submissions.filter(s => s.score !== null)
+    
+    const avgScore = submissionsWithScores.length > 0 
+      ? Math.round(submissionsWithScores.reduce((sum, s) => sum + (s.score || 0), 0) / submissionsWithScores.length)
+      : 0
+
+    // Determine status based on end date
+    const now = new Date()
+    const endDate = new Date(challenge.endDate)
+    const status = endDate > now ? 'ACTIVE' : 'COMPLETED'
+
+    return {
+      id: challenge.id,
+      title: challenge.title,
+      difficulty: challenge.difficulty,
+      points: challenge.points,
+      creator: challenge.creator?.name || challenge.creator?.email || 'Anonymous',
+      status,
+      totalSubmissions,
+      pendingReviews,
+      avgScore,
+      timeLimit: challenge.timeLimit,
+      description: challenge.description,
+      endDate: challenge.endDate
+    }
+  })
+}
 
 function getDifficultyVariant(difficulty: string): "default" | "secondary" | "destructive" {
   switch (difficulty?.toUpperCase()) {
@@ -105,10 +126,11 @@ function getStatusVariant(status: string): "default" | "secondary" | "destructiv
 
 export default async function JudgeChallengesPage() {
   const { user, authUser } = await checkJudgeAccess()
+  const challenges = await getJudgeChallenges()
 
-  const activeChallenges = mockAssignedChallenges.filter(c => c.status === "ACTIVE")
-  const completedChallenges = mockAssignedChallenges.filter(c => c.status === "COMPLETED")
-  const totalPendingReviews = mockAssignedChallenges.reduce((sum, c) => sum + c.pendingReviews, 0)
+  const activeChallenges = challenges.filter(c => c.status === "ACTIVE")
+  const completedChallenges = challenges.filter(c => c.status === "COMPLETED")
+  const totalPendingReviews = challenges.reduce((sum, c) => sum + c.pendingReviews, 0)
 
   return (
     <div className="min-h-screen bg-background">
@@ -134,7 +156,7 @@ export default async function JudgeChallengesPage() {
                 <Target className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{mockAssignedChallenges.length}</div>
+                <div className="text-2xl font-bold">{challenges.length}</div>
                 <p className="text-xs text-muted-foreground">Total under your review</p>
               </CardContent>
             </Card>
@@ -250,9 +272,11 @@ export default async function JudgeChallengesPage() {
                             Review Submissions ({challenge.pendingReviews})
                           </Link>
                         </Button>
-                        <Button size="sm" variant="outline">
-                          <Eye className="h-4 w-4 mr-2" />
-                          View Challenge Details
+                        <Button size="sm" variant="outline" asChild>
+                          <Link href={`/challenges/${challenge.id}`}>
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Challenge Details
+                          </Link>
                         </Button>
                       </div>
                     </CardContent>
@@ -300,9 +324,11 @@ export default async function JudgeChallengesPage() {
                           </div>
                         </div>
                         
-                        <Button size="sm" variant="outline">
-                          <Eye className="h-4 w-4 mr-2" />
-                          View Results
+                        <Button size="sm" variant="outline" asChild>
+                          <Link href={`/challenges/${challenge.id}`}>
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Results
+                          </Link>
                         </Button>
                       </div>
                     </CardContent>
