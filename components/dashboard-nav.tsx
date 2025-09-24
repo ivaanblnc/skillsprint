@@ -31,11 +31,6 @@ export function DashboardNav() {
       { name: "Leaderboard", href: "/leaderboard", icon: Trophy },
     ]
     
-    // Add judge-specific navigation if user is a judge
-    if (userInfo?.role === 'JUDGE') {
-      baseNavigation.splice(2, 0, { name: "Judge Panel", href: "/judge/challenges", icon: Gavel })
-    }
-    
     // Add creator-specific navigation if user is a creator
     if (userInfo?.role === 'CREATOR') {
       baseNavigation.splice(2, 0, 

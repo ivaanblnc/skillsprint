@@ -25,14 +25,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     where: { email: user.email! },
     update: {
       name: metadata.name || "",
-      role: (metadata.role?.toUpperCase() as "CREATOR" | "PARTICIPANT" | "JUDGE") || "PARTICIPANT",
+      role: (metadata.role?.toUpperCase() as "CREATOR" | "PARTICIPANT" | "ADMIN") || "PARTICIPANT",
       updatedAt: new Date(),
     },
     create: {
       id: user.id,
       email: user.email!,
       name: metadata.name || "",
-      role: (metadata.role?.toUpperCase() as "CREATOR" | "PARTICIPANT" | "JUDGE") || "PARTICIPANT",
+      role: (metadata.role?.toUpperCase() as "CREATOR" | "PARTICIPANT" | "ADMIN") || "PARTICIPANT",
       createdAt: new Date(),
       updatedAt: new Date(),
       points: 0,

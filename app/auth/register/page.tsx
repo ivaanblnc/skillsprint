@@ -107,7 +107,6 @@ export default function RegisterPage() {
   const roleOptions = [
     { value: "PARTICIPANT", label: "Participant", description: "Join challenges and compete", icon: Users },
     { value: "CREATOR", label: "Creator", description: "Create and manage challenges", icon: Trophy },
-    { value: "JUDGE", label: "Judge", description: "Evaluate and score submissions", icon: Scale },
   ]
 
   return (

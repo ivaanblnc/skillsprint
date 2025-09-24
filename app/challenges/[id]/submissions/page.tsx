@@ -1,110 +1,213 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Download, User, Clock, CheckCircle, AlertCircle, Clock as ClockIcon } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { CheckCircle, XCircle, AlertCircle, Code2, Download, ArrowLeft, Eye, FileText } from "lucide-react"
 import Link from "next/link"
-import { DashboardNav } from "@/components/dashboard-nav"
 import { toast } from "sonner"
+import { DashboardNav } from "@/components/dashboard-nav"
 
 interface Submission {
   id: string
-  userId: string
-  code: string | null
-  language: string | null
-  fileUrl: string | null
-  status: string
-  score: number | null
-  submittedAt: string
-  reviewedAt: string | null
-  user: {
-    name: string | null
-    email: string
+  challenge: {
+    id: string
+    title: string
+    points: number
   }
-  reviewedBy: {
-    name: string | null
-    email: string
-  } | null
-}
-
-interface Challenge {
-  id: string
-  title: string
-  difficulty: string
-  points: number
-  timeLimit: number
+  user: {
+    id: string
+    name: string
+    email: string | null
+    avatar: string | null
+  }
+  submittedAt: Date
+  language: string | null
   status: string
+  code: string | null
+  fileUrl: string | null
+  hasFile: boolean
+  executionTime: number | null
+  memory: number | null
+  score: number | null
+  reviewedAt: Date | null
+  feedbacks: Array<{
+    id: string
+    comment: string
+    rating: number
+    createdAt: Date
+    creator: string
+  }>
 }
 
-export default function ChallengeSubmissionsPage() {
-  const params = useParams()
-  const challengeId = params.id as string
-  
-  const [loading, setLoading] = useState(true)
-  const [challenge, setChallenge] = useState<Challenge | null>(null)
+function getStatusVariant(status: string): "default" | "secondary" | "destructive" {
+  switch (status) {
+    case "ACCEPTED":
+      return "default"
+    case "PENDING":
+      return "secondary"
+    case "REJECTED":
+    case "WRONG_ANSWER":
+    case "TIME_LIMIT_EXCEEDED":
+    case "RUNTIME_ERROR":
+    case "COMPILATION_ERROR":
+      return "destructive"
+    default:
+      return "secondary"
+  }
+}
+
+function getStatusIcon(status: string) {
+  switch (status) {
+    case "ACCEPTED":
+      return <CheckCircle className="h-4 w-4 text-green-500" />
+    case "PENDING":
+      return <AlertCircle className="h-4 w-4 text-yellow-500" />
+    default:
+      return <XCircle className="h-4 w-4 text-red-500" />
+  }
+}
+
+export default function ChallengeSubmissionsPage({ params }: { params: { id: string } }) {
+  const router = useRouter()
   const [submissions, setSubmissions] = useState<Submission[]>([])
-  const [filter, setFilter] = useState<string>("all")
+  const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState("ALL")
+  const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null)
+  const [showReviewModal, setShowReviewModal] = useState(false)
+  const [showCodeModal, setShowCodeModal] = useState(false)
+  const [customScore, setCustomScore] = useState<number>(0)
+  const [feedback, setFeedback] = useState<string>("")
+  const [loadingSubmissions, setLoadingSubmissions] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchSubmissions = async () => {
       try {
-        // Fetch challenge details
-        const challengeResponse = await fetch(`/api/challenges/${challengeId}`)
-        if (!challengeResponse.ok) {
-          throw new Error("Failed to fetch challenge")
-        }
-        const challengeData = await challengeResponse.json()
-        setChallenge(challengeData.challenge)
-
-        // Fetch submissions
-        const submissionsResponse = await fetch(`/api/challenges/${challengeId}/submissions`)
-        if (!submissionsResponse.ok) {
+        const statusParam = activeTab === "ALL" ? "" : `?status=${activeTab}`
+        const response = await fetch(`/api/challenges/${params.id}/submissions${statusParam}`)
+        
+        if (!response.ok) {
           throw new Error("Failed to fetch submissions")
         }
-        const submissionsData = await submissionsResponse.json()
-        setSubmissions(submissionsData.submissions)
-
+        
+        const data = await response.json()
+        setSubmissions(data.submissions)
       } catch (error) {
-        console.error("Error fetching data:", error)
-        toast.error("Failed to load challenge data")
+        console.error("Error fetching submissions:", error)
+        toast.error("Failed to load submissions")
       } finally {
         setLoading(false)
       }
     }
 
-    if (challengeId) {
-      fetchData()
-    }
-  }, [challengeId])
+    fetchSubmissions()
+  }, [params.id, activeTab])
 
-  const getSubmissionStatus = (status: string) => {
-    const statusConfig = {
-      ACCEPTED: { icon: CheckCircle, variant: "secondary" as const, text: "Accepted", color: "text-green-600" },
-      REJECTED: { icon: AlertCircle, variant: "destructive" as const, text: "Rejected", color: "text-red-600" },
-      PENDING: { icon: ClockIcon, variant: "default" as const, text: "Pending Review", color: "text-yellow-600" },
-      WRONG_ANSWER: { icon: AlertCircle, variant: "destructive" as const, text: "Wrong Answer", color: "text-red-600" },
-      RUNTIME_ERROR: { icon: AlertCircle, variant: "destructive" as const, text: "Runtime Error", color: "text-red-600" },
-      COMPILATION_ERROR: { icon: AlertCircle, variant: "destructive" as const, text: "Compilation Error", color: "text-red-600" },
-      TIME_LIMIT_EXCEEDED: { icon: AlertCircle, variant: "destructive" as const, text: "Time Limit Exceeded", color: "text-red-600" },
-    }
+  const handleViewCode = (submission: Submission) => {
+    setSelectedSubmission(submission)
+    setShowCodeModal(true)
+  }
 
-    return statusConfig[status as keyof typeof statusConfig] || statusConfig.PENDING
+  const handleReviewClick = (submission: Submission, action: 'ACCEPT' | 'REJECT') => {
+    setSelectedSubmission(submission)
+    setCustomScore(action === 'ACCEPT' ? submission.challenge.points : 0)
+    setFeedback("")
+    setShowReviewModal(true)
+  }
+
+  const handleConfirmReview = async () => {
+    if (!selectedSubmission) return
+
+    const action = customScore > 0 ? 'ACCEPT' : 'REJECT'
+    
+    setLoadingSubmissions(prev => new Set(prev).add(selectedSubmission.id))
+
+    try {
+      const response = await fetch(`/api/challenges/${params.id}/submissions`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          submissionId: selectedSubmission.id,
+          action,
+          score: customScore,
+          feedback
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to update submission')
+      }
+
+      // Update the submission in the list
+      setSubmissions(prev => prev.map(s => 
+        s.id === selectedSubmission.id 
+          ? { 
+              ...s, 
+              status: action === 'ACCEPT' ? 'ACCEPTED' : 'REJECTED',
+              score: customScore,
+              reviewedAt: new Date()
+            }
+          : s
+      ))
+
+      toast.success(`Submission ${action.toLowerCase()}ed successfully!`)
+      setShowReviewModal(false)
+      setSelectedSubmission(null)
+
+    } catch (error) {
+      console.error('Error updating submission:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to update submission')
+    } finally {
+      setLoadingSubmissions(prev => {
+        const next = new Set(prev)
+        next.delete(selectedSubmission.id)
+        return next
+      })
+    }
+  }
+
+  const handleDownloadFile = async (submissionId: string) => {
+    try {
+      const response = await fetch(`/api/challenges/${params.id}/submissions/${submissionId}/download`)
+      if (!response.ok) {
+        throw new Error('Failed to download file')
+      }
+      
+      // Create a blob from the response and trigger download
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `submission-${submissionId}.zip`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (error) {
+      console.error('Download error:', error)
+      toast.error('Failed to download file')
+    }
   }
 
   const filteredSubmissions = submissions.filter(submission => {
-    if (filter === "all") return true
-    return submission.status === filter
+    if (activeTab === "ALL") return true
+    return submission.status === activeTab
   })
 
-  const stats = {
-    total: submissions.length,
-    accepted: submissions.filter(s => s.status === "ACCEPTED").length,
-    pending: submissions.filter(s => s.status === "PENDING").length,
-    rejected: submissions.filter(s => s.status === "REJECTED").length,
-  }
+  const pendingCount = submissions.filter(s => s.status === "PENDING").length
+  const acceptedCount = submissions.filter(s => s.status === "ACCEPTED").length
+  const rejectedCount = submissions.filter(s => s.status === "REJECTED").length
 
   if (loading) {
     return (
@@ -127,176 +230,306 @@ export default function ChallengeSubmissionsPage() {
   return (
     <div className="min-h-screen bg-background">
       <DashboardNav />
+
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
-          <div className="mb-6">
+          {/* Header */}
+          <div className="mb-8">
             <Link href="/challenges/manage" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-4">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Manage Challenges
             </Link>
-            <div>
-              <h1 className="text-3xl font-bold mb-2">Challenge Submissions</h1>
-              {challenge && (
-                <div className="flex items-center gap-3">
-                  <p className="text-muted-foreground">{challenge.title}</p>
-                  <Badge variant={
-                    challenge.difficulty === "EASY" ? "secondary" :
-                    challenge.difficulty === "MEDIUM" ? "default" : "destructive"
-                  }>
-                    {challenge.difficulty}
-                  </Badge>
-                  <Badge variant="outline">{challenge.points} points</Badge>
-                </div>
-              )}
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold mb-2">Challenge Submissions</h1>
+                <p className="text-muted-foreground">Review and evaluate participant submissions</p>
+              </div>
             </div>
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <Card>
-              <CardContent className="p-4">
-                <div className="text-2xl font-bold">{stats.total}</div>
-                <p className="text-xs text-muted-foreground">Total Submissions</p>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Submissions</CardTitle>
+                <FileText className="h-4 w-4 text-primary" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{submissions.length}</div>
               </CardContent>
             </Card>
+
             <Card>
-              <CardContent className="p-4">
-                <div className="text-2xl font-bold text-green-600">{stats.accepted}</div>
-                <p className="text-xs text-muted-foreground">Accepted</p>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Pending Review</CardTitle>
+                <AlertCircle className="h-4 w-4 text-yellow-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{pendingCount}</div>
               </CardContent>
             </Card>
+
             <Card>
-              <CardContent className="p-4">
-                <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
-                <p className="text-xs text-muted-foreground">Pending Review</p>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Accepted</CardTitle>
+                <CheckCircle className="h-4 w-4 text-green-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{acceptedCount}</div>
               </CardContent>
             </Card>
+
             <Card>
-              <CardContent className="p-4">
-                <div className="text-2xl font-bold text-red-600">{stats.rejected}</div>
-                <p className="text-xs text-muted-foreground">Rejected</p>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Rejected</CardTitle>
+                <XCircle className="h-4 w-4 text-red-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{rejectedCount}</div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Filters */}
-          <Card className="mb-6">
-            <CardContent className="p-4">
-              <div className="flex gap-2">
-                {[
-                  { key: "all", label: "All Submissions" },
-                  { key: "PENDING", label: "Pending" },
-                  { key: "ACCEPTED", label: "Accepted" },
-                  { key: "REJECTED", label: "Rejected" },
-                ].map((filterOption) => (
-                  <Button
-                    key={filterOption.key}
-                    variant={filter === filterOption.key ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setFilter(filterOption.key)}
-                  >
-                    {filterOption.label}
-                  </Button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Submissions List */}
+          {/* Submissions Tabs */}
           <Card>
             <CardHeader>
-              <CardTitle>Submissions ({filteredSubmissions.length})</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Code2 className="h-5 w-5 text-primary" />
+                Submissions Review
+              </CardTitle>
               <CardDescription>
-                All submissions for this challenge
+                Review participant submissions and provide feedback
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {filteredSubmissions.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">No submissions found for the selected filter.</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {filteredSubmissions.map((submission) => {
-                    const statusConfig = getSubmissionStatus(submission.status)
-                    const StatusIcon = statusConfig.icon
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="ALL">All ({submissions.length})</TabsTrigger>
+                  <TabsTrigger value="PENDING">Pending ({pendingCount})</TabsTrigger>
+                  <TabsTrigger value="ACCEPTED">Accepted ({acceptedCount})</TabsTrigger>
+                  <TabsTrigger value="REJECTED">Rejected ({rejectedCount})</TabsTrigger>
+                </TabsList>
 
-                    return (
-                      <Card key={submission.id} className="hover:shadow-sm transition-shadow">
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-2">
-                                <div className="flex items-center gap-2">
-                                  <User className="h-4 w-4 text-muted-foreground" />
-                                  <span className="font-medium">
-                                    {submission.user.name || submission.user.email.split('@')[0]}
+                <TabsContent value={activeTab} className="mt-6">
+                  <div className="space-y-4">
+                    {filteredSubmissions.length === 0 ? (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <AlertCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground/30" />
+                        <p>No submissions found for this category</p>
+                      </div>
+                    ) : (
+                      filteredSubmissions.map((submission) => (
+                        <Card key={submission.id} className="hover:shadow-md transition-shadow">
+                          <CardContent className="p-6">
+                            <div className="flex items-start justify-between mb-4">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-2">
+                                  <h3 className="font-semibold text-lg">{submission.challenge.title}</h3>
+                                  <Badge
+                                    variant={getStatusVariant(submission.status)}
+                                    className="text-xs flex items-center gap-1"
+                                  >
+                                    {getStatusIcon(submission.status)}
+                                    {submission.status}
+                                  </Badge>
+                                  <span className="text-sm text-muted-foreground">
+                                    Score: {submission.score !== null ? `${submission.score}/${submission.challenge.points}` : 'Not graded'}
                                   </span>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                  <StatusIcon className={`h-4 w-4 ${statusConfig.color}`} />
-                                  <Badge variant={statusConfig.variant} className="text-xs">
-                                    {statusConfig.text}
-                                  </Badge>
-                                </div>
-                                {submission.score !== null && (
-                                  <Badge variant="outline" className="text-xs">
-                                    {submission.score}/{challenge?.points} points
-                                  </Badge>
-                                )}
-                              </div>
-                              
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
-                                <div>
-                                  <span>Submitted:</span>
-                                  <p className="font-medium text-foreground">
-                                    {new Date(submission.submittedAt).toLocaleDateString()}
-                                  </p>
-                                </div>
-                                {submission.language && (
-                                  <div>
-                                    <span>Language:</span>
-                                    <p className="font-medium text-foreground">{submission.language}</p>
+                                
+                                <div className="flex items-center gap-6 text-sm text-muted-foreground mb-4">
+                                  <div className="flex items-center gap-2">
+                                    <Avatar className="h-6 w-6">
+                                      <AvatarImage src={submission.user.avatar || ""} />
+                                      <AvatarFallback className="text-xs">
+                                        {submission.user.name?.charAt(0) || "U"}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <span>{submission.user.name}</span> 
                                   </div>
-                                )}
-                                {submission.reviewedAt && (
-                                  <div>
-                                    <span>Reviewed:</span>
-                                    <p className="font-medium text-foreground">
-                                      {new Date(submission.reviewedAt).toLocaleDateString()}
-                                    </p>
-                                  </div>
-                                )}
-                                {submission.reviewedBy && (
-                                  <div>
-                                    <span>Reviewed by:</span>
-                                    <p className="font-medium text-foreground">
-                                      {submission.reviewedBy.name || submission.reviewedBy.email.split('@')[0]}
-                                    </p>
+                                  <span>Language: {submission.language || 'N/A'}</span>
+                                  <span>Submitted: {new Date(submission.submittedAt).toLocaleDateString()}</span>
+                                  {submission.executionTime && <span>Runtime: {submission.executionTime}ms</span>}
+                                  {submission.memory && <span>Memory: {submission.memory}KB</span>}
+                                </div>
+
+                                {/* Feedback */}
+                                {submission.feedbacks.length > 0 && (
+                                  <div className="bg-blue-50 dark:bg-blue-950 rounded-lg p-3 mb-4">
+                                    <h4 className="text-sm font-medium mb-2">Feedback:</h4>
+                                    {submission.feedbacks.map((feedback) => (
+                                      <div key={feedback.id} className="text-sm">
+                                        <p className="mb-1">{feedback.comment}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                          Rating: {feedback.rating}/5 - By {feedback.creator}
+                                        </p>
+                                      </div>
+                                    ))}
                                   </div>
                                 )}
                               </div>
                             </div>
 
-                            <div className="flex gap-2">
-                              {submission.fileUrl && (
-                                <Button size="sm" variant="outline">
+                            <div className="flex gap-3 flex-wrap">
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handleViewCode(submission)}
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                View Code
+                              </Button>
+                              
+                              {submission.hasFile && (
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => handleDownloadFile(submission.id)}
+                                >
                                   <Download className="h-4 w-4 mr-2" />
-                                  Download
+                                  Download File
                                 </Button>
                               )}
+                              
+                              {submission.status === 'PENDING' && (
+                                <>
+                                  <Button 
+                                    size="sm" 
+                                    className="bg-green-600 hover:bg-green-700"
+                                    onClick={() => handleReviewClick(submission, 'ACCEPT')}
+                                    disabled={loadingSubmissions.has(submission.id)}
+                                  >
+                                    <CheckCircle className="h-4 w-4 mr-2" />
+                                    {loadingSubmissions.has(submission.id) ? 'Processing...' : 'Accept'}
+                                  </Button>
+                                  <Button 
+                                    size="sm" 
+                                    variant="destructive"
+                                    onClick={() => handleReviewClick(submission, 'REJECT')}
+                                    disabled={loadingSubmissions.has(submission.id)}
+                                  >
+                                    <XCircle className="h-4 w-4 mr-2" />
+                                    {loadingSubmissions.has(submission.id) ? 'Processing...' : 'Reject'}
+                                  </Button>
+                                </>
+                              )}
                             </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )
-                  })}
-                </div>
-              )}
+                          </CardContent>
+                        </Card>
+                      ))
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
         </div>
       </main>
+
+      {/* Code View Modal */}
+      <Dialog open={showCodeModal} onOpenChange={setShowCodeModal}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Submission Code</DialogTitle>
+            <DialogDescription>
+              {selectedSubmission && `Submitted by ${selectedSubmission.user.name} in ${selectedSubmission.language}`}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedSubmission && (
+            <div className="mt-4">
+              <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium">Code Submission</span>
+                  {selectedSubmission.hasFile && (
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleDownloadFile(selectedSubmission.id)}
+                    >
+                      <Download className="h-3 w-3 mr-1" />
+                      Download File
+                    </Button>
+                  )}
+                </div>
+                <pre className="text-sm overflow-x-auto max-h-96 overflow-y-auto whitespace-pre-wrap">
+                  <code>{selectedSubmission.code || 'No code content available. This submission may contain only uploaded files.'}</code>
+                </pre>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button onClick={() => setShowCodeModal(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Review Modal */}
+      <Dialog open={showReviewModal} onOpenChange={setShowReviewModal}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Review Submission</DialogTitle>
+            <DialogDescription>
+              Set the score and provide feedback for this submission.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedSubmission && (
+            <div className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <h4 className="font-medium">{selectedSubmission.challenge.title}</h4>
+                <p className="text-sm text-muted-foreground">
+                  Submitted by {selectedSubmission.user.name}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Max points: {selectedSubmission.challenge.points}
+                </p>
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="score">Score</Label>
+                <Input
+                  id="score"
+                  type="number"
+                  min="0"
+                  max={selectedSubmission.challenge.points}
+                  value={customScore}
+                  onChange={(e) => setCustomScore(Number(e.target.value))}
+                  placeholder="Enter score"
+                />
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="feedback">Feedback (Optional)</Label>
+                <Textarea
+                  id="feedback"
+                  value={feedback}
+                  onChange={(e) => setFeedback(e.target.value)}
+                  placeholder="Provide feedback for the participant..."
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowReviewModal(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleConfirmReview}
+              className={customScore > 0 ? "bg-green-600 hover:bg-green-700" : ""}
+              variant={customScore > 0 ? "default" : "destructive"}
+              disabled={!selectedSubmission || customScore < 0 || customScore > (selectedSubmission?.challenge.points || 0)}
+            >
+              {customScore > 0 ? 'Accept' : 'Reject'} Submission
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

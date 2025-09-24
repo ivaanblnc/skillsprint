@@ -25,12 +25,7 @@ async function main() {
       email: 'bob@example.com',
       role: 'PARTICIPANT',
     },
-    {
-      id: 'judge-1',
-      name: 'Judge John',
-      email: 'judge@example.com',
-      role: 'JUDGE',
-    },
+
   ];
 
   for (const u of users) {
@@ -162,14 +157,14 @@ async function main() {
     {
       id: 'feedback-1',
       submissionId: 'submission-1',
-      judgeId: 'judge-1',
+      creatorId: 'creator-1',
       comment: 'Excellent solution!',
       rating: 5,
     },
     {
       id: 'feedback-2',
       submissionId: 'submission-2',
-      judgeId: 'judge-1',
+      creatorId: 'creator-1',
       comment: 'Needs improvement.',
       rating: 2,
     },
