@@ -74,6 +74,10 @@
       "points": "Puntos",
       "difficulty_level": "Nivel de Dificultad"
     },
+    "searchPlaceholder": "Buscar desafíos...",
+    "selectDifficulty": "Seleccionar dificultad",
+    "allDifficulties": "Todas las dificultades",
+    "showingResults": "Mostrando {{count}} de {{total}} resultados",
     "details": {
       "points": "puntos",
       "timeLimit": "Límite de Tiempo",
@@ -599,7 +603,17 @@
     "cancel": "Cancelar",
     "delete": "Eliminar",
     "edit": "Editar",
-    "back": "Volver"
+    "back": "Volver",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "clear": "Limpiar",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "error": "Error",
+    "success": "Éxito",
+    "view": "Ver",
+    "close": "Cerrar",
+    "anonymous": "Anónimo"
   },
   "submit": {
     "backToChallenge": "Volver al Desafío",

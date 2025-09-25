@@ -63,24 +63,26 @@ export function LeaderboardTabs({
   }
 
   return (
-    <Tabs defaultValue="overall" className="space-y-6">
-      <TabsList className="grid w-full grid-cols-3">
-        <TabsTrigger value="overall">{t("leaderboard.tabs.overall")}</TabsTrigger>
-        <TabsTrigger value="recent">{t("leaderboard.tabs.recent")}</TabsTrigger>
-        <TabsTrigger value="challenges">{t("leaderboard.tabs.challenges")}</TabsTrigger>
+    <Tabs defaultValue="overall" className="space-y-8">
+      <TabsList className="grid w-full grid-cols-3 glass-card p-2 liquid-border-lg h-14">
+        <TabsTrigger value="overall" className="liquid-border text-base font-semibold">{t("leaderboard.tabs.overall")}</TabsTrigger>
+        <TabsTrigger value="recent" className="liquid-border text-base font-semibold">{t("leaderboard.tabs.recent")}</TabsTrigger>
+        <TabsTrigger value="challenges" className="liquid-border text-base font-semibold">{t("leaderboard.tabs.challenges")}</TabsTrigger>
       </TabsList>
 
-      <TabsContent value="overall" className="space-y-6">
-        <Card>
+      <TabsContent value="overall" className="space-y-8">
+        <Card className="glass-card">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-primary" />
+            <CardTitle className="flex items-center gap-3 text-2xl">
+              <div className="p-2 glass-card liquid-border">
+                <Trophy className="h-6 w-6 text-primary" />
+              </div>
               {t("leaderboard.sections.topPerformers")}
             </CardTitle>
-            <CardDescription>{t("leaderboard.sections.topPerformersDesc")}</CardDescription>
+            <CardDescription className="text-base">{t("leaderboard.sections.topPerformersDesc")}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-6">
               {topUsers.map((user, index) => {
                 const rank = index + 1
                 const isCurrentUser = user.id === currentUserId
@@ -88,32 +90,34 @@ export function LeaderboardTabs({
                 return (
                   <div
                     key={user.id}
-                    className={`flex items-center justify-between p-4 rounded-lg border ${
-                      isCurrentUser ? "bg-primary/5 border-primary/20" : ""
+                    className={`flex items-center justify-between p-6 glass-card liquid-border-lg ${
+                      isCurrentUser ? "bg-primary/10 border-primary/30" : ""
                     }`}
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center justify-center w-8">{getRankIcon(rank)}</div>
-                      <Avatar className="h-10 w-10">
+                    <div className="flex items-center gap-6">
+                      <div className="flex items-center justify-center w-12 h-12 glass-card liquid-border">{getRankIcon(rank)}</div>
+                      <Avatar className="h-12 w-12">
                         <AvatarImage src={user.image || ""} alt={user.name || ""} />
                         <AvatarFallback>{user.name?.charAt(0) || "U"}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-semibold">{user.name || "Anonymous"}</p>
-                          {isCurrentUser && <Badge variant="outline">You</Badge>}
+                        <div className="flex items-center gap-3 mb-2">
+                          <p className="font-semibold text-lg">{user.name || "Anonymous"}</p>
+                          {isCurrentUser && <Badge variant="outline" className="liquid-border">You</Badge>}
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Badge variant="secondary" className="text-xs capitalize">
+                        <div className="flex items-center gap-3 text-muted-foreground">
+                          <Badge variant="secondary" className="liquid-border capitalize">
                             {t(`profile.roles.${user.role.toLowerCase()}`)}
                           </Badge>
-                          {user._count && <span>{user._count.submissions} {t("leaderboard.labels.solutions")}</span>}
+                          {user._count && (
+                            <span className="font-medium">{user._count.submissions} {t("leaderboard.labels.solutions")}</span>
+                          )}
                         </div>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-lg font-bold">{user.points}</p>
-                      <p className="text-xs text-muted-foreground">points</p>
+                      <p className="text-2xl font-bold text-primary">{user.points}</p>
+                      <p className="text-sm text-muted-foreground font-medium">points</p>
                     </div>
                   </div>
                 )

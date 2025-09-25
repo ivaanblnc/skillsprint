@@ -143,54 +143,62 @@ export default async function LeaderboardPage() {
     <div className="min-h-screen bg-background">
       <DashboardNav />
 
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2 text-balance">{messages.leaderboard.title}</h1>
-          <p className="text-muted-foreground text-pretty">{messages.leaderboard.description}</p>
+      <main className="container mx-auto px-4 py-12">
+        <div className="mb-12 text-center">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-balance">{messages.leaderboard.title}</h1>
+          <p className="text-xl text-muted-foreground text-pretty max-w-2xl mx-auto">{messages.leaderboard.description}</p>
         </div>
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-primary" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
+          <Card className="glass-card">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 glass-card liquid-border">
+                  <Users className="h-6 w-6 text-primary" />
+                </div>
                 <div>
-                  <p className="text-2xl font-bold">{stats.totalUsers}</p>
-                  <p className="text-xs text-muted-foreground">{messages.leaderboard.stats.totalUsers}</p>
+                  <p className="text-3xl font-bold text-primary">{stats.totalUsers}</p>
+                  <p className="text-sm text-muted-foreground font-medium">{messages.leaderboard.stats.totalUsers}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <Target className="h-4 w-4 text-primary" />
+          <Card className="glass-card">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 glass-card liquid-border">
+                  <Target className="h-6 w-6 text-primary" />
+                </div>
                 <div>
-                  <p className="text-2xl font-bold">{stats.totalSolutions}</p>
-                  <p className="text-xs text-muted-foreground">{messages.leaderboard.stats.solutions}</p>
+                  <p className="text-3xl font-bold text-primary">{stats.totalSolutions}</p>
+                  <p className="text-sm text-muted-foreground font-medium">{messages.leaderboard.stats.solutions}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <Trophy className="h-4 w-4 text-primary" />
+          <Card className="glass-card">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 glass-card liquid-border">
+                  <Trophy className="h-6 w-6 text-primary" />
+                </div>
                 <div>
-                  <p className="text-2xl font-bold">{stats.activeChallenges}</p>
-                  <p className="text-xs text-muted-foreground">{messages.leaderboard.stats.activeChallenges}</p>
+                  <p className="text-3xl font-bold text-primary">{stats.activeChallenges}</p>
+                  <p className="text-sm text-muted-foreground font-medium">{messages.leaderboard.stats.activeChallenges}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-primary" />
+          <Card className="glass-card">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 glass-card liquid-border">
+                  <TrendingUp className="h-6 w-6 text-primary" />
+                </div>
                 <div>
-                  <p className="text-2xl font-bold">{stats.averageScore}</p>
-                  <p className="text-xs text-muted-foreground">{messages.leaderboard.stats.avgScore}</p>
+                  <p className="text-3xl font-bold text-primary">{stats.averageScore}</p>
+                  <p className="text-sm text-muted-foreground font-medium">{messages.leaderboard.stats.avgScore}</p>
                 </div>
               </div>
             </CardContent>

@@ -97,12 +97,12 @@ export function ChallengeCard({ challenge }: ChallengeCardProps) {
   }
 
   return (
-    <Card className="hover:shadow-lg transition-shadow">
-      <CardHeader>
-        <div className="flex items-start justify-between">
+    <Card className="h-full glass-elevated">
+      <CardHeader className="pb-4">
+        <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
-            <CardTitle className="text-lg mb-2 text-balance">{challenge.title}</CardTitle>
-            <div className="flex items-center gap-2 mb-3">
+            <CardTitle className="text-lg mb-3 text-balance leading-tight">{challenge.title}</CardTitle>
+            <div className="flex items-center gap-2">
               <Badge
                 variant={
                   challenge.difficulty === "EASY"
@@ -111,49 +111,51 @@ export function ChallengeCard({ challenge }: ChallengeCardProps) {
                       ? "default"
                       : "destructive"
                 }
+                className="liquid-border text-xs"
               >
                 {t(`challenges.difficulty.${challenge.difficulty.toLowerCase()}`)}
               </Badge>
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="text-xs liquid-border">
                 <Trophy className="h-3 w-3 mr-1" />
-                {challenge.points} {t("challenges.details.points")}
+                {challenge.points} pts
               </Badge>
             </div>
           </div>
         </div>
-        <CardDescription className="text-pretty line-clamp-3">{challenge.description}</CardDescription>
+        <CardDescription className="text-sm leading-relaxed line-clamp-2 mb-4">{challenge.description}</CardDescription>
         
         {/* Submission Status */}
         {!loading && getSubmissionBadge()}
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-0">
         <div className="space-y-4">
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span className="flex items-center gap-1">
+          {/* Challenge Stats */}
+          <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1 p-2 bg-muted/30 liquid-border">
               <Clock className="h-3 w-3" />
-              {challenge.timeLimit} {t("challenges.details.minutes")}
-            </span>
-            <span className="flex items-center gap-1">
+              <span>{challenge.timeLimit}m</span>
+            </div>
+            <div className="flex items-center gap-1 p-2 bg-muted/30 liquid-border">
               <Users className="h-3 w-3" />
-              {challenge._count.submissions} {t("challenges.details.submissions")}
-            </span>
-            <span className="flex items-center gap-1">
+              <span>{challenge._count.submissions}</span>
+            </div>
+            <div className="flex items-center gap-1 p-2 bg-muted/30 liquid-border">
               <Calendar className="h-3 w-3" />
-              {t("challenges.details.daysLeft", { days: timeRemaining.toString() })}
-            </span>
+              <span>{timeRemaining}d</span>
+            </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="text-xs text-muted-foreground">
-                {t("challenges.details.createdBy")} {challenge.creator?.name || t("common.anonymous")}
-              </div>
-            </div>
-            
+          {/* Creator Info */}
+          <div className="text-xs text-muted-foreground">
+            {t("challenges.details.createdBy")} {challenge.creator?.name || t("common.anonymous")}
+          </div>
+          
+          {/* Action Buttons */}
+          <div className="pt-8">
             {submission ? (
-              <div className="flex gap-2">
+              <div>
                 <Link href={`/challenges/${challenge.id}`}>
-                  <Button size="sm" variant="outline">
+                  <Button size="sm" variant="outline" className="w-full liquid-border">
                     {t("challenges.details.viewDetails")}
                   </Button>
                 </Link>
@@ -163,30 +165,28 @@ export function ChallengeCard({ challenge }: ChallengeCardProps) {
                   submission.status === "RUNTIME_ERROR" || 
                   submission.status === "COMPILATION_ERROR" ||
                   submission.status === "TIME_LIMIT_EXCEEDED")) && (
-                  <Link href={`/challenges/${challenge.id}/submit`}>
-                    <Button size="sm" variant="secondary">
-                      {(submission as any).isDraft ? t("challenges.details.continueDraft") : t("challenges.details.improveSolution")}
-                    </Button>
-                  </Link>
+                  <div className="mt-6">
+                    <Link href={`/challenges/${challenge.id}/submit`}>
+                      <Button size="sm" className="w-full liquid-border">
+                        {(submission as any).isDraft ? t("challenges.details.continueDraft") : t("challenges.details.improveSolution")}
+                      </Button>
+                    </Link>
+                  </div>
                 )}
                 {/* Para submissions aceptadas, mostrar un botón indicativo */}
                 {submission.status === "ACCEPTED" && (
-                  <Button size="sm" variant="secondary" disabled>
-                    <CheckCircle className="h-3 w-3 mr-1" />
-                    {t("challenges.details.completed")}
-                  </Button>
-                )}
-                {/* Para submissions pendientes o rechazadas, solo mostrar el estado */}
-                {(submission.status === "PENDING" || submission.status === "REJECTED") && (
-                  <span className="text-xs text-muted-foreground px-2 py-1">
-                    {t("challenges.seeDetailsForStatus")}
-                  </span>
+                  <div className="mt-6">
+                    <Button size="sm" variant="secondary" disabled className="w-full liquid-border">
+                      <CheckCircle className="h-3 w-3 mr-2" />
+                      {t("challenges.details.completed")}
+                    </Button>
+                  </div>
                 )}
               </div>
             ) : (
               <Link href={`/challenges/${challenge.id}`}>
-                <Button size="sm">
-                  <Target className="h-3 w-3 mr-1" />
+                <Button size="sm" className="w-full liquid-border">
+                  <Target className="h-3 w-3 mr-2" />
                   {t("challenges.details.startChallenge")}
                 </Button>
               </Link>

@@ -241,18 +241,20 @@ function StatsCard({
   showProgress?: boolean
 }) {
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        {icon}
+    <Card className="glass-elevated">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+        <CardTitle className="text-base font-semibold">{title}</CardTitle>
+        <div className="p-2 bg-primary/5 liquid-border">
+          {icon}
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">
-          {value !== undefined ? (showProgress ? `${value}%` : value) : <Skeleton className="h-6 w-12" />}
+        <div className="text-3xl font-bold mb-2 text-primary">
+          {value !== undefined ? (showProgress ? `${value}%` : value) : <Skeleton className="h-8 w-16" />}
         </div>
-        {description && <p className="text-xs text-muted-foreground">{description}</p>}
+        {description && <p className="text-sm text-muted-foreground font-medium">{description}</p>}
         {showProgress && value !== undefined && (
-          <Progress value={value} className="mt-2" />
+          <Progress value={value} className="mt-3 h-2" />
         )}
       </CardContent>
     </Card>
@@ -320,33 +322,33 @@ export default async function DashboardPage() {
       <div className="min-h-screen bg-background">
         <DashboardNav />
 
-        <main className="container mx-auto px-4 py-8">
+        <main className="container mx-auto px-4 py-12">
           {/* Welcome Section */}
-          <div className="mb-8">
-            <div className="flex items-center gap-4 mb-4">
-              <Avatar className="h-16 w-16">
+          <div className="mb-12 glass-card p-8 liquid-border-lg glass-elevated">
+            <div className="flex items-center gap-6 mb-6">
+              <Avatar className="h-20 w-20 liquid-border glass-elevated">
                 <AvatarImage 
                   src={authUser.user_metadata?.avatar_url || ""} 
                   alt={user.name || user.email || "User"} 
                 />
-                <AvatarFallback className="text-lg">
+                <AvatarFallback className="text-xl font-bold bg-primary text-primary-foreground">
                   {user.name?.charAt(0) || user.email?.charAt(0) || "U"}
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h1 className="text-3xl font-bold text-balance">
+                <h1 className="text-4xl md:text-5xl font-bold text-balance mb-3">
                   {t("dashboard.welcome")}, {user.name || t("dashboard.developer")}!
                 </h1>
-                <p className="text-muted-foreground">{t("dashboard.readyForChallenge")}</p>
+                <p className="text-muted-foreground text-lg">{t("dashboard.readyForChallenge")}</p>
               </div>
             </div>
-            <Badge variant="secondary" className="capitalize">
+            <Badge variant="secondary" className="capitalize liquid-border px-4 py-2">
               {user.role ? t(`auth.${user.role.toLowerCase()}`) : t("dashboard.developer")}
             </Badge>
           </div>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
             <StatsCard 
               title={t("dashboard.totalPoints")} 
               value={stats.totalPoints} 
@@ -373,62 +375,65 @@ export default async function DashboardPage() {
             />
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-8">
+          <div className="grid lg:grid-cols-3 gap-10">
             {/* Active Challenges */}
             <div className="lg:col-span-2">
-              <Card>
+              <Card className="glass-elevated">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle className="flex items-center gap-2">
-                        <Zap className="h-5 w-5 text-primary" /> {t("challenges.title")}
+                      <CardTitle className="flex items-center gap-3 text-2xl">
+                        <div className="p-2 bg-primary/5 liquid-border">
+                          <Zap className="h-6 w-6 text-primary" />
+                        </div>
+                        {t("challenges.title")}
                       </CardTitle>
-                      <CardDescription>{t("dashboard.jumpIntoLive")}</CardDescription>
+                      <CardDescription className="text-base mt-2">{t("dashboard.jumpIntoLive")}</CardDescription>
                     </div>
                     <Link href="/challenges">
-                      <Button variant="outline" size="sm">
-                        {t("dashboard.viewAll")} <ArrowRight className="ml-2 h-4 w-4" />
+                      <Button variant="outline" size="lg" className="liquid-border">
+                        {t("dashboard.viewAll")} <ArrowRight className="ml-2 h-5 w-5" />
                       </Button>
                     </Link>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     {activeChallenges.length > 0 ? (
                       activeChallenges.map((challenge) => (
-                        <div key={challenge.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div key={challenge.id} className="flex items-center justify-between p-6 glass-card liquid-border-lg glass-elevated">
                           <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h3 className="font-semibold">{challenge.title}</h3>
+                            <div className="flex items-center gap-3 mb-3">
+                              <h3 className="font-semibold text-lg">{challenge.title}</h3>
                               <Badge
                                 variant={getDifficultyVariant(challenge.difficulty)}
-                                className="text-xs"
+                                className="liquid-border"
                               >
                                 {t(`challenges.difficulty.${challenge.difficulty?.toLowerCase()}`)}
                               </Badge>
                             </div>
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                              <span className="flex items-center gap-1">
-                                <Trophy className="h-3 w-3" />{challenge.points} {t("dashboard.pts")}
+                            <div className="flex items-center gap-6 text-muted-foreground">
+                              <span className="flex items-center gap-2 p-2 glass-card liquid-border">
+                                <Trophy className="h-4 w-4 text-primary" />{challenge.points} {t("dashboard.pts")}
                               </span>
-                              <span className="flex items-center gap-1">
-                                <Clock className="h-3 w-3" />{challenge.timeLimit}{t("dashboard.min")}
+                              <span className="flex items-center gap-2 p-2 glass-card liquid-border">
+                                <Clock className="h-4 w-4 text-primary" />{challenge.timeLimit}{t("dashboard.min")}
                               </span>
-                              <span className="flex items-center gap-1">
-                                <Users className="h-3 w-3" />{challenge._count?.submissions || 0} {t("dashboard.submissionsCount")}
+                              <span className="flex items-center gap-2 p-2 glass-card liquid-border">
+                                <Users className="h-4 w-4 text-primary" />{challenge._count?.submissions || 0}
                               </span>
                             </div>
                           </div>
                           <Link href={`/challenges/${challenge.id}`}>
-                            <Button size="sm">{t("dashboard.startChallenge")}</Button>
+                            <Button size="lg" className="liquid-border">{t("dashboard.startChallenge")}</Button>
                           </Link>
                         </div>
                       ))
                     ) : (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <Zap className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                        <p>{t("dashboard.noChallenges")}</p>
-                        <p className="text-sm">{t("dashboard.checkBackLater")}</p>
+                      <div className="text-center py-12 glass-card liquid-border-lg glass-elevated">
+                        <Zap className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p className="text-lg font-medium mb-2">{t("dashboard.noChallenges")}</p>
+                        <p className="text-muted-foreground">{t("dashboard.checkBackLater")}</p>
                       </div>
                     )}
                   </div>
@@ -438,35 +443,38 @@ export default async function DashboardPage() {
 
             {/* Recent Activity */}
             <div>
-              <Card>
+              <Card className="glass-elevated">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-primary" /> {t("dashboard.recentActivity")}
+                  <CardTitle className="flex items-center gap-3 text-xl">
+                    <div className="p-2 bg-primary/5 liquid-border">
+                      <TrendingUp className="h-5 w-5 text-primary" />
+                    </div>
+                    {t("dashboard.recentActivity")}
                   </CardTitle>
-                  <CardDescription>{t("dashboard.yourLatest")}</CardDescription>
+                  <CardDescription className="text-base">{t("dashboard.yourLatest")}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     {recentSubmissions.length > 0 ? (
                       recentSubmissions.map((submission) => (
-                        <div key={submission.id} className="flex items-center justify-between">
+                        <div key={submission.id} className="flex items-center justify-between p-4 glass-card liquid-border glass-elevated">
                           <div className="flex-1">
-                            <p className="font-medium text-sm">{submission.challenge.title}</p>
-                            <div className="flex items-center gap-2 mt-1">
+                            <p className="font-semibold text-base">{submission.challenge.title}</p>
+                            <div className="flex items-center gap-3 mt-2">
                               <Badge
                                 variant={getStatusVariant(submission.status)}
-                                className="text-xs"
+                                className="liquid-border"
                               >
                                 {getStatusText(submission.status, t)}
                               </Badge>
                               {submission.score && (
-                                <span className="text-xs text-muted-foreground">
+                                <span className="text-sm text-muted-foreground font-medium">
                                   {submission.score}/100
                                 </span>
                               )}
                             </div>
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-sm text-muted-foreground font-medium">
                             {submission.submittedAt instanceof Date 
                               ? submission.submittedAt.toLocaleDateString() 
                               : new Date(submission.submittedAt).toLocaleDateString()}
@@ -474,10 +482,10 @@ export default async function DashboardPage() {
                         </div>
                       ))
                     ) : (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <Code2 className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                        <p>{t("dashboard.noSubmissionsYet")}</p>
-                        <p className="text-sm">{t("dashboard.startFirst")}</p>
+                      <div className="text-center py-12 glass-card liquid-border-lg glass-elevated">
+                        <Code2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p className="text-lg font-medium mb-2">{t("dashboard.noSubmissionsYet")}</p>
+                        <p className="text-muted-foreground">{t("dashboard.startFirst")}</p>
                       </div>
                     )}
                   </div>
@@ -485,19 +493,19 @@ export default async function DashboardPage() {
               </Card>
 
               {/* Quick Actions */}
-              <Card className="mt-6">
+              <Card className="mt-8 glass-elevated">
                 <CardHeader>
-                  <CardTitle>{t("dashboard.quickActions")}</CardTitle>
+                  <CardTitle className="text-xl">{t("dashboard.quickActions")}</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-4">
                   <Link href="/challenges" className="block">
-                    <Button variant="outline" className="w-full justify-start bg-transparent">
-                      <Target className="mr-2 h-4 w-4" /> {t("dashboard.browseChallenges")}
+                    <Button variant="outline" className="w-full justify-start h-12 liquid-border">
+                      <Target className="mr-3 h-5 w-5" /> {t("dashboard.browseChallenges")}
                     </Button>
                   </Link>
                   <Link href="/leaderboard" className="block">
-                    <Button variant="outline" className="w-full justify-start bg-transparent">
-                      <Trophy className="mr-2 h-4 w-4" /> {t("dashboard.viewLeaderboard")}
+                    <Button variant="outline" className="w-full justify-start h-12 liquid-border">
+                      <Trophy className="mr-3 h-5 w-5" /> {t("dashboard.viewLeaderboard")}
                     </Button>
                   </Link>
                   {user.role === "CREATOR" && (

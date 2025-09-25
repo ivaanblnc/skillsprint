@@ -74,6 +74,10 @@
       "points": "Points",
       "difficulty_level": "Difficulty Level"
     },
+    "searchPlaceholder": "Search challenges...",
+    "selectDifficulty": "Select difficulty",
+    "allDifficulties": "All difficulties",
+    "showingResults": "Showing {{count}} of {{total}} results",
     "details": {
       "points": "points",
       "timeLimit": "Time Limit",
@@ -598,7 +602,17 @@
     "cancel": "Cancel",
     "delete": "Delete",
     "edit": "Edit",
-    "back": "Back"
+    "back": "Back",
+    "previous": "Previous",
+    "next": "Next",
+    "clear": "Clear",
+    "search": "Search",
+    "filter": "Filter",
+    "error": "Error",
+    "success": "Success",
+    "view": "View",
+    "close": "Close",
+    "anonymous": "Anonymous"
   },
   "submit": {
     "backToChallenge": "Back to Challenge",

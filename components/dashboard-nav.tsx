@@ -110,29 +110,29 @@ export function DashboardNav() {
   }, [])
 
   return (
-    <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav className="glass-nav sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="bg-primary rounded-lg p-2">
+          <Link href="/dashboard" className="flex items-center gap-3">
+            <div className="bg-primary liquid-border p-2.5 glass-elevated">
               <Code2 className="h-6 w-6 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold">SkillSprint</span>
+            <span className="text-xl font-bold text-foreground">SkillSprint</span>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-8">
             {navigation.map((item) => {
               const Icon = item.icon
               return (
                 <Link
                   key={item.name}
                   href={item.href}
-                  className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+                  className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors duration-300 px-3 py-2 liquid-border hover:bg-accent/20"
                 >
                   <Icon className="h-4 w-4" />
-                  {item.name}
+                  <span className="font-medium">{item.name}</span>
                 </Link>
               )
             })}
