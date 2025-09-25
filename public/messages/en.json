@@ -339,7 +339,15 @@
     "cta": {
       "title": "Ready to Sprint?",
       "subtitle": "Join the community and start your coding journey today",
-      "button": "Get Started Free"
+      "button": "Get Started Free",
+      "startJourney": "Start Journey",
+      "viewLeaderboard": "View Leaderboard"
+    },
+    "footer": {
+      "challenges": "Challenges",
+      "leaderboard": "Leaderboard",
+      "signIn": "Sign In",
+      "copyright": "© 2024 SkillSprint. All rights reserved."
     }
   },
   "leaderboard": {
@@ -444,7 +452,23 @@
     "signInToAccount": "Sign in to your account",
     "createAccount": "Create your account",
     "welcomeBack": "Welcome back!",
-    "getStarted": "Let's get started"
+    "getStarted": "Let's get started",
+    "creator": "Creator",
+    "participant": "Participant",
+    "signInTitle": "Sign In",
+    "signInSubtitle": "Welcome to SkillSprint",
+    "usePassword": "Use Password",
+    "useMagicLink": "Use Magic Link",
+    "getMagicLinkEmail": "Get magic link via email",
+    "sendMagicLink": "Send Magic Link",
+    "signUpTitle": "Create Account",
+    "createAccountDesc": "Join the community of developers",
+    "joinSkillSprint": "Join SkillSprint",
+    "createAccountStart": "Create your account to get started",
+    "roleDescriptions": {
+      "participantDesc": "Solve challenges and compete with other developers",
+      "creatorDesc": "Create and manage your own coding challenges"
+    }
   },
   "create": {
     "title": "Create Challenge",

@@ -337,8 +337,16 @@
     },
     "cta": {
       "title": "¿Listo para Empezar?",
-      "subtitle": "Únete a la comunidad y comienza tu viaje de programación hoy",
-      "button": "Comenzar Gratis"
+      "subtitle": "Únete a la comunidad y comienza tus desafios de programación hoy",
+      "button": "Comenzar Gratis",
+      "startJourney": "Comenzar Desafios",
+      "viewLeaderboard": "Ver Tabla de Clasificación"
+    },
+    "footer": {
+      "challenges": "Desafíos",
+      "leaderboard": "Tabla de Clasificación",
+      "signIn": "Iniciar Sesión",
+      "copyright": "© 2024 SkillSprint. Todos los derechos reservados."
     }
   },
   "leaderboard": {
@@ -444,7 +452,22 @@
     "createAccount": "Crear tu cuenta",
     "welcomeBack": "¡Bienvenido de nuevo!",
     "getStarted": "Comencemos",
-    "creator": "Creador"
+    "creator": "Creador",
+    "participant": "Participante",
+    "signInTitle": "Iniciar Sesión",
+    "signInSubtitle": "Bienvenido a SkillSprint",
+    "usePassword": "Usar Contraseña",
+    "useMagicLink": "Usar Enlace Mágico",
+    "getMagicLinkEmail": "Obtener enlace por correo",
+    "sendMagicLink": "Enviar Enlace Mágico",
+    "signUpTitle": "Crear Cuenta",
+    "createAccountDesc": "Únete a la comunidad de desarrolladores",
+    "joinSkillSprint": "Únete a SkillSprint",
+    "createAccountStart": "Crea tu cuenta para comenzar",
+    "roleDescriptions": {
+      "participantDesc": "Resuelve desafíos y compite con otros desarrolladores",
+      "creatorDesc": "Crea y gestiona tus propios desafíos de programación"
+    }
   },
   "create": {
     "title": "Crear Desafío",
