@@ -1,14 +1,26 @@
-"use client"
-
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Code2, Trophy, Users, Clock, Zap, Target, ArrowRight } from "lucide-react"
-import { useTranslations } from "@/lib/i18n"
+import { getMessages, translate } from "@/lib/server-i18n"
+import { LanguageSwitcher } from "@/components/language-switcher"
+import { prisma } from "@/lib/prisma"
 
-export default function HomePage() {
-  const t = useTranslations()
+export default async function HomePage() {
+  const messages = await getMessages()
+  const t = (key: string, params?: Record<string, string>) => translate(messages, key, params)
+
+  // Obtener estadísticas reales desde la base de datos
+  const [challengesCount, usersCount, submissionsCount] = await Promise.all([
+    prisma.challenge.count({
+      where: {
+        status: 'ACTIVE'
+      }
+    }),
+    prisma.user.count(),
+    prisma.submission.count()
+  ])
   
   const features = [
     {
@@ -34,10 +46,9 @@ export default function HomePage() {
   ]
 
   const stats = [
-    { label: t("homepage.stats.activeChallenges"), value: "50+" },
-    { label: t("homepage.stats.developers"), value: "10K+" },
-    { label: t("homepage.stats.solutionsSubmitted"), value: "25K+" },
-    { label: t("homepage.stats.averageCompletion"), value: "30min" },
+    { label: t("homepage.stats.activeChallenges"), value: `${challengesCount}+` },
+    { label: t("homepage.stats.developers"), value: `${usersCount >= 1000 ? Math.floor(usersCount/1000) + 'K' : usersCount}+` },
+    { label: t("homepage.stats.solutionsSubmitted"), value: `${submissionsCount >= 1000 ? Math.floor(submissionsCount/1000) + 'K' : submissionsCount}+` },
   ]
 
   return (
@@ -52,6 +63,7 @@ export default function HomePage() {
             <span className="text-xl font-bold">SkillSprint</span>
           </div>
           <div className="flex items-center gap-4">
+            <LanguageSwitcher />
             <Link href="/auth/login">
               <Button variant="ghost">{t("homepage.navigation.signIn")}</Button>
             </Link>
@@ -95,7 +107,7 @@ export default function HomePage() {
       {/* Stats Section */}
       <section className="py-16 px-4 bg-muted/50">
         <div className="container mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {stats.map((stat, index) => (
               <div key={index} className="text-center">
                 <div className="text-3xl md:text-4xl font-bold text-primary mb-2">{stat.value}</div>
