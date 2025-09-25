@@ -13,6 +13,7 @@ import { Upload, Code2, Save, Clock, Trophy, Target, FileText, ArrowLeft, X } fr
 import Link from "next/link"
 import { DashboardNav } from "@/components/dashboard-nav"
 import { toast } from "sonner"
+import { useTranslations } from "@/lib/i18n"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -79,6 +80,7 @@ export default function ChallengeSubmitPage() {
   const params = useParams()
   const router = useRouter()
   const challengeId = params.id as string
+  const t = useTranslations()
   
   // Estado del componente
   const [challenge, setChallenge] = useState<Challenge | null>(null)
@@ -108,11 +110,11 @@ export default function ChallengeSubmitPage() {
         
         if (!response.ok) {
           if (response.status === 404) {
-            setError("Challenge no encontrado")
+            setError("Desafío no encontrado")
           } else if (response.status === 401) {
-            setError("No autorizado para acceder a este challenge")
+            setError("No autorizado para acceder a este desafío")
           } else {
-            setError("Error al cargar el challenge")
+            setError("Error al cargar el desafío")
           }
           return
         }
@@ -121,7 +123,7 @@ export default function ChallengeSubmitPage() {
         setChallenge(data.challenge)
       } catch (err) {
         console.error("Error fetching challenge:", err)
-        setError("Error al cargar el challenge")
+        setError("Error al cargar el desafío")
       } finally {
         setLoading(false)
       }
@@ -151,8 +153,7 @@ export default function ChallengeSubmitPage() {
               setIsActive(false) // Detener el timer
             }
           }
-        }
-      } catch (error) {
+        }        } catch (error) {
         console.error("Error loading existing submission:", error)
       }
     }
@@ -212,7 +213,7 @@ export default function ChallengeSubmitPage() {
   const handleAutoSubmit = useCallback(async () => {
     if (isSubmitted || isSubmitting) return
     
-    toast.error("Time's up! Auto-submitting your current solution...")
+    toast.error("¡Se acabó el tiempo! Auto-enviando tu solución actual...")
     
     try {
       let fileUrl: string | undefined = undefined
@@ -253,7 +254,7 @@ export default function ChallengeSubmitPage() {
         },
         body: JSON.stringify({
           challengeId,
-          code: code || "// Time's up - auto submitted",
+          code: code || "// Se acabó el tiempo - enviado automáticamente",
           language,
           fileUrl,
           isDraft: false
@@ -266,7 +267,7 @@ export default function ChallengeSubmitPage() {
         setIsSubmitted(true)
         setExistingSubmission(data.submission)
         localStorage.removeItem(`draft_${challengeId}`)
-        toast.success("Solution auto-submitted due to time limit")
+        toast.success("Solución auto-enviada debido al límite de tiempo")
         
         setTimeout(() => {
           router.push("/challenges")
@@ -274,7 +275,7 @@ export default function ChallengeSubmitPage() {
       }
     } catch (error) {
       console.error("Auto-submit error:", error)
-      toast.error("Failed to auto-submit solution")
+      toast.error("Error al auto-enviar la solución")
     }
   }, [challengeId, code, language, uploadedFile, isSubmitted, isSubmitting, router])
 
@@ -375,11 +376,11 @@ int main() {
     if (files.length > 0) {
       const file = files[0]
       if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        toast.error("File size must be less than 5MB")
+        toast.error("El tamaño del archivo debe ser menor a 5MB")
         return
       }
       setUploadedFile(file)
-      toast.success(`File "${file.name}" uploaded successfully`)
+      toast.success(`Archivo "${file.name}" subido exitosamente`)
     }
   }, [])
 
@@ -388,11 +389,11 @@ int main() {
     const file = e.target.files?.[0]
     if (file) {
       if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        toast.error("File size must be less than 5MB")
+        toast.error("El tamaño del archivo debe ser menor a 5MB")
         return
       }
       setUploadedFile(file)
-      toast.success(`File "${file.name}" uploaded successfully`)
+      toast.success(`Archivo "${file.name}" subido exitosamente`)
     }
   }
 
@@ -404,7 +405,7 @@ int main() {
   // Función para guardar como draft
   const handleSaveDraft = () => {
     if (!code.trim() && !uploadedFile) {
-      toast.error("Please provide a solution before saving")
+      toast.error("Por favor proporciona una solución antes de guardar")
       return
     }
     setShowSaveDraftDialog(true)
@@ -422,7 +423,7 @@ int main() {
         const userData = await userResponse.json()
         
         if (!userResponse.ok || !userData.id) {
-          throw new Error('Unable to get user information')
+          throw new Error('No se pudo obtener la información del usuario')
         }
 
         const formData = new FormData()
@@ -438,7 +439,7 @@ int main() {
         const uploadData = await uploadResponse.json()
 
         if (!uploadResponse.ok) {
-          throw new Error(uploadData.error || 'Failed to upload file')
+          throw new Error(uploadData.error || 'Error al subir el archivo')
         }
 
         fileUrl = uploadData.fileUrl
@@ -461,7 +462,7 @@ int main() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to save draft')
+        throw new Error(data.error || 'Error al guardar el borrador')
       }
 
       // Guardar también en localStorage como backup
@@ -476,12 +477,12 @@ int main() {
         timestamp: new Date().toISOString()
       }))
 
-      toast.success(data.message || "Draft saved successfully! You can continue later.")
+      toast.success(data.message || "¡Borrador guardado exitosamente! Puedes continuar más tarde.")
       setShowSaveDraftDialog(false)
       router.push("/challenges")
     } catch (error) {
       console.error("Error saving draft:", error)
-      toast.error(error instanceof Error ? error.message : "Failed to save draft. Please try again.")
+      toast.error(error instanceof Error ? error.message : "Error al guardar el borrador. Inténtalo de nuevo.")
     } finally {
       setIsSaving(false)
     }
@@ -492,12 +493,12 @@ int main() {
   // Función para enviar solución final
   const handleSubmitSolution = () => {
     if (!code.trim() && !uploadedFile) {
-      toast.error("Please provide a solution before submitting")
+      toast.error("Por favor proporciona una solución antes de enviar")
       return
     }
 
     if (isSubmitted) {
-      toast.error("You have already submitted a solution for this challenge")
+      toast.error("Ya has enviado una solución para este desafío")
       return
     }
 
@@ -516,7 +517,7 @@ int main() {
         const userData = await userResponse.json()
         
         if (!userResponse.ok || !userData.id) {
-          throw new Error('Unable to get user information')
+          throw new Error('No se pudo obtener la información del usuario')
         }
 
         const formData = new FormData()
@@ -532,7 +533,7 @@ int main() {
         const uploadData = await uploadResponse.json()
 
         if (!uploadResponse.ok) {
-          throw new Error(uploadData.error || 'Failed to upload file')
+          throw new Error(uploadData.error || 'Error al subir el archivo')
         }
 
         fileUrl = uploadData.fileUrl
@@ -555,7 +556,7 @@ int main() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to submit solution')
+        throw new Error(data.error || 'Error al enviar la solución')
       }
 
       // Limpiar el draft del localStorage
@@ -565,7 +566,7 @@ int main() {
       setIsSubmitted(true)
       setExistingSubmission(data.submission)
       
-      toast.success(data.message || "Solution submitted successfully! Judges will review it soon.")
+      toast.success(data.message || "¡Solución enviada exitosamente! Los jueces la revisarán pronto.")
       setShowSubmitDialog(false)
       
       // Redirigir después de un momento para que el usuario vea el mensaje
@@ -574,7 +575,7 @@ int main() {
       }, 2000)
     } catch (error) {
       console.error("Error submitting solution:", error)
-      toast.error(error instanceof Error ? error.message : "Failed to submit solution. Please try again.")
+      toast.error(error instanceof Error ? error.message : "Error al enviar la solución. Inténtalo de nuevo.")
     } finally {
       setIsSubmitting(false)
     }
@@ -602,7 +603,7 @@ int main() {
               className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-4"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Challenge
+              Volver al Desafío
             </Link>
             
             <div className="flex items-center justify-between">
@@ -610,11 +611,11 @@ int main() {
                 <h1 className="text-2xl font-bold mb-2">{challenge.title}</h1>
                 <div className="flex items-center gap-4">
                   <Badge variant={getDifficultyVariant(challenge.difficulty)}>
-                    {challenge.difficulty}
+                    {t(`challenges.difficulty.${challenge.difficulty.toLowerCase()}`)}
                   </Badge>
                   <span className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Trophy className="h-4 w-4" />
-                    {challenge.points} points
+                    {challenge.points} puntos
                   </span>
                 </div>
               </div>
@@ -643,7 +644,7 @@ int main() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="h-5 w-5 text-primary" />
-                  Problem Description
+                  Descripción del Problema
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -655,19 +656,19 @@ int main() {
 
                 {/* Test Cases */}
                 <div className="space-y-4">
-                  <h4 className="font-semibold">Example Test Cases</h4>
+                  <h4 className="font-semibold">Casos de Prueba de Ejemplo</h4>
                   {challenge.testCases.map((testCase: any, index: number) => (
                     <div key={index} className="border rounded-lg p-3 space-y-2">
-                      <div className="text-sm font-medium">Example {index + 1}</div>
+                      <div className="text-sm font-medium">Ejemplo {index + 1}</div>
                       <div className="space-y-1">
                         <div>
-                          <span className="text-xs font-medium text-muted-foreground">INPUT:</span>
+                          <span className="text-xs font-medium text-muted-foreground">ENTRADA:</span>
                           <pre className="text-xs bg-muted p-2 rounded mt-1 overflow-x-auto">
                             {testCase.input}
                           </pre>
                         </div>
                         <div>
-                          <span className="text-xs font-medium text-muted-foreground">OUTPUT:</span>
+                          <span className="text-xs font-medium text-muted-foreground">SALIDA:</span>
                           <pre className="text-xs bg-muted p-2 rounded mt-1 overflow-x-auto">
                             {testCase.expectedOutput}
                           </pre>
@@ -684,17 +685,17 @@ int main() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Code2 className="h-5 w-5 text-primary" />
-                  Solution
+                  Solución
                 </CardTitle>
                 <CardDescription>
-                  Write your code or upload a file with your solution
+                  Escribe tu código o sube un archivo con tu solución
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Tabs value={activeTab} onValueChange={isSubmitted ? undefined : setActiveTab} className="space-y-4">
                   <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="code" disabled={isSubmitted}>Code Editor</TabsTrigger>
-                    <TabsTrigger value="upload" disabled={isSubmitted}>File Upload</TabsTrigger>
+                    <TabsTrigger value="code" disabled={isSubmitted}>Editor de Código</TabsTrigger>
+                    <TabsTrigger value="upload" disabled={isSubmitted}>Subir Archivo</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="code" className="space-y-4">
@@ -712,7 +713,7 @@ int main() {
                       </Select>
                       {isSubmitted && (
                         <Badge variant="secondary" className="ml-2">
-                          Read Only - Solution Submitted
+                          Solo Lectura - Solución Enviada
                         </Badge>
                       )}
                     </div>
@@ -721,7 +722,7 @@ int main() {
                       <Textarea
                         value={code}
                         onChange={(e) => setCode(e.target.value)}
-                        placeholder={isSubmitted ? "Solution already submitted - read only" : "Write your solution here..."}
+                        placeholder={isSubmitted ? "Solución ya enviada - solo lectura" : "Escribe tu solución aquí..."}
                         className="min-h-[300px] font-mono text-sm"
                         disabled={isSubmitted}
                         readOnly={isSubmitted}
@@ -730,7 +731,7 @@ int main() {
 
                     {output && (
                       <div className="space-y-2">
-                        <div className="text-sm font-medium">Output:</div>
+                        <div className="text-sm font-medium">Resultado:</div>
                         <pre className="text-xs bg-muted p-3 rounded-lg overflow-x-auto whitespace-pre-wrap">
                           {output}
                         </pre>
@@ -755,12 +756,12 @@ int main() {
                       <Upload className="h-8 w-8 mx-auto mb-4 text-muted-foreground" />
                       <div className="space-y-2">
                         <p className="text-sm font-medium">
-                          {isSubmitted ? "File upload disabled - Solution already submitted" : "Drag and drop your solution file here"}
+                          {isSubmitted ? "Subida de archivos deshabilitada - Solución ya enviada" : "Arrastra y suelta tu archivo de solución aquí"}
                         </p>
                         {!isSubmitted && (
                           <>
                             <p className="text-xs text-muted-foreground">
-                              or click to select a file (max 5MB)
+                              o haz clic para seleccionar un archivo (máx 5MB)
                             </p>
                             <input
                               type="file"
@@ -771,7 +772,7 @@ int main() {
                             />
                             <label htmlFor="file-upload">
                               <Button variant="outline" className="mt-2" asChild>
-                                <span>Select File</span>
+                                <span>Seleccionar Archivo</span>
                               </Button>
                             </label>
                           </>
@@ -793,7 +794,7 @@ int main() {
                           size="sm"
                           onClick={() => {
                             setUploadedFile(null)
-                            toast.success("File removed")
+                            toast.success("Archivo eliminado")
                           }}
                         >
                           <X className="h-4 w-4" />
@@ -810,17 +811,17 @@ int main() {
                       <div className="flex items-center justify-between">
                         <div>
                           <div className="font-medium text-sm">
-                            Solution Submitted
+                            Solución Enviada
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            Status: {existingSubmission?.status === "ACCEPTED" ? "Accepted" : 
-                                   existingSubmission?.status === "WRONG_ANSWER" ? "Wrong Answer" :
-                                   existingSubmission?.status === "RUNTIME_ERROR" ? "Runtime Error" :
-                                   "Pending Review"}
+                            Estado: {existingSubmission?.status === "ACCEPTED" ? "Solución Aceptada" : 
+                                   existingSubmission?.status === "WRONG_ANSWER" ? "Respuesta Incorrecta" :
+                                   existingSubmission?.status === "RUNTIME_ERROR" ? "Error de Ejecución" :
+                                   "Pendiente"}
                           </div>
                           {existingSubmission?.score && (
                             <div className="text-xs text-muted-foreground">
-                              Score: {existingSubmission.score}/100
+                              Puntuación: {existingSubmission.score}/100
                             </div>
                           )}
                         </div>
@@ -828,8 +829,8 @@ int main() {
                           variant={existingSubmission?.status === "ACCEPTED" ? "secondary" : 
                                   existingSubmission?.status === "PENDING" ? "default" : "destructive"}
                         >
-                          {existingSubmission?.status === "ACCEPTED" ? "✓ Accepted" : 
-                           existingSubmission?.status === "PENDING" ? "⏳ Pending" : "✗ Failed"}
+                          {existingSubmission?.status === "ACCEPTED" ? "✓ Solución Aceptada" : 
+                           existingSubmission?.status === "PENDING" ? "⏳ Pendiente" : "✗ Solución Rechazada"}
                         </Badge>
                       </div>
                     </div>
@@ -843,7 +844,7 @@ int main() {
                         disabled={(!code.trim() && !uploadedFile) || isSaving}
                       >
                         <Save className="h-4 w-4 mr-2" />
-                        {isSaving ? "Saving..." : "Save Draft"}
+                        {isSaving ? "Guardando..." : "Guardar Borrador"}
                       </Button>
                       
                       <Button 
@@ -852,7 +853,7 @@ int main() {
                         className="bg-green-600 hover:bg-green-700"
                       >
                         <Target className="h-4 w-4 mr-2" />
-                        {isSubmitting ? "Submitting..." : "Submit Final Solution"}
+                        {isSubmitting ? "Enviando..." : "Enviar Solución Final"}
                       </Button>
                     </>
                   )}
@@ -867,15 +868,15 @@ int main() {
       <AlertDialog open={showSaveDraftDialog} onOpenChange={setShowSaveDraftDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Save Draft</AlertDialogTitle>
+            <AlertDialogTitle>Guardar Borrador</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to save your current progress as a draft? You can continue working on it later.
+              ¿Estás seguro de que quieres guardar tu progreso actual como borrador? Puedes continuar trabajando en él más tarde.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isSaving}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isSaving}>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={confirmSaveDraft} disabled={isSaving}>
-              {isSaving ? "Saving..." : "Save Draft"}
+              {isSaving ? "Guardando..." : "Guardar Borrador"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -885,15 +886,15 @@ int main() {
       <AlertDialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Submit Final Solution</AlertDialogTitle>
+            <AlertDialogTitle>Enviar Solución Final</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to submit your final solution? Once submitted, you won't be able to make any changes to this challenge submission.
+              ¿Estás seguro de que quieres enviar tu solución final? Una vez enviada, no podrás hacer cambios a este envío de desafío.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isSubmitting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isSubmitting}>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={confirmSubmitSolution} disabled={isSubmitting}>
-              {isSubmitting ? "Submitting..." : "Submit Solution"}
+              {isSubmitting ? "Enviando..." : "Enviar Solución"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

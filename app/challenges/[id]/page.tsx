@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation"
 import { createServerClient } from "@/lib/supabase/server"
 import { prisma } from "@/lib/prisma"
+import { translate, getMessages } from "@/lib/server-i18n"
 
 // Revalidate this page every 30 seconds to show updated submission statuses
 export const revalidate = 30
@@ -146,6 +147,8 @@ async function getChallengeWithSubmission(challengeId: string, userId?: string) 
 
 export default async function ChallengePage({ params }: { params: { id: string } }) {
   const user = await getUserIfAuthenticated()
+  const messages = await getMessages()
+  const t = (key: string, params?: Record<string, string>) => translate(messages, key, params)
   
   // Get challenge from database
   const result = await getChallengeWithSubmission(params.id, user?.id)
@@ -170,13 +173,13 @@ export default async function ChallengePage({ params }: { params: { id: string }
     if (!userSubmission) return null
     
     const statusConfig = {
-      ACCEPTED: { icon: CheckCircle, variant: "secondary" as const, text: "Solution Accepted", color: "text-green-600" },
-      REJECTED: { icon: AlertCircle, variant: "destructive" as const, text: "Solution Rejected", color: "text-red-600" },
-      PENDING: { icon: ClockIcon, variant: "default" as const, text: "Pending Review", color: "text-yellow-600" },
-      WRONG_ANSWER: { icon: AlertCircle, variant: "destructive" as const, text: "Wrong Answer", color: "text-red-600" },
-      RUNTIME_ERROR: { icon: AlertCircle, variant: "destructive" as const, text: "Runtime Error", color: "text-red-600" },
-      COMPILATION_ERROR: { icon: AlertCircle, variant: "destructive" as const, text: "Compilation Error", color: "text-red-600" },
-      TIME_LIMIT_EXCEEDED: { icon: AlertCircle, variant: "destructive" as const, text: "Time Limit Exceeded", color: "text-red-600" },
+      ACCEPTED: { icon: CheckCircle, variant: "secondary" as const, text: t("submissions.status.accepted"), color: "text-green-600" },
+      REJECTED: { icon: AlertCircle, variant: "destructive" as const, text: t("submissions.status.rejected"), color: "text-red-600" },
+      PENDING: { icon: ClockIcon, variant: "default" as const, text: t("submissions.status.pending"), color: "text-yellow-600" },
+      WRONG_ANSWER: { icon: AlertCircle, variant: "destructive" as const, text: t("submissions.status.wrongAnswer"), color: "text-red-600" },
+      RUNTIME_ERROR: { icon: AlertCircle, variant: "destructive" as const, text: t("submissions.status.runtimeError"), color: "text-red-600" },
+      COMPILATION_ERROR: { icon: AlertCircle, variant: "destructive" as const, text: t("submissions.status.compilationError"), color: "text-red-600" },
+      TIME_LIMIT_EXCEEDED: { icon: AlertCircle, variant: "destructive" as const, text: t("submissions.status.timeLimitExceeded"), color: "text-red-600" },
     }
 
     return statusConfig[userSubmission.status as keyof typeof statusConfig] || null
@@ -205,11 +208,11 @@ export default async function ChallengePage({ params }: { params: { id: string }
                           : "destructive"
                     }
                   >
-                    {challenge.difficulty}
+                    {translate(messages, `challenges.difficulty.${challenge.difficulty.toLowerCase()}`)}
                   </Badge>
                   <Badge variant="outline">
                     <Trophy className="h-3 w-3 mr-1" />
-                    {challenge.points} points
+                    {challenge.points} {translate(messages, 'challenges.details.points')}
                   </Badge>
                 </div>
               </div>
@@ -235,10 +238,10 @@ export default async function ChallengePage({ params }: { params: { id: string }
                     <Button>
                       <Code2 className="h-4 w-4 mr-2" />
                       {userSubmission && (userSubmission as any).isDraft 
-                        ? "Continue Draft" 
+                        ? translate(messages, "challenges.details.continueDraft")
                         : userSubmission 
-                          ? "Improve Solution" 
-                          : "Start Challenge"}
+                          ? translate(messages, "challenges.details.improveSolution")
+                          : translate(messages, "challenges.details.startChallenge")}
                     </Button>
                   </Link>
                 )}
@@ -246,14 +249,14 @@ export default async function ChallengePage({ params }: { params: { id: string }
                   <AuthRequiredTrigger>
                     <Button>
                       <Code2 className="h-4 w-4 mr-2" />
-                      Start Challenge
+                      {translate(messages, "challenges.details.startChallenge")}
                     </Button>
                   </AuthRequiredTrigger>
                 )}
                 {userSubmission && userSubmission.status === "ACCEPTED" && (
                   <Button disabled>
                     <CheckCircle className="h-4 w-4 mr-2" />
-                    Completed
+                    {translate(messages, "challenges.details.completed")}
                   </Button>
                 )}
               </div>
@@ -263,15 +266,15 @@ export default async function ChallengePage({ params }: { params: { id: string }
             <div className="flex items-center gap-6 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Clock className="h-4 w-4" />
-                {challenge.timeLimit} minutes
+                {challenge.timeLimit} {translate(messages, "challenges.details.minutes")}
               </span>
               <span className="flex items-center gap-1">
                 <Users className="h-4 w-4" />
-                {challenge._count.submissions} submissions
+                {challenge._count.submissions} {translate(messages, "challenges.details.submissions")}
               </span>
               <span className="flex items-center gap-1">
                 <Calendar className="h-4 w-4" />
-                {hasEnded ? "Ended" : `${timeRemaining} days left`}
+                {hasEnded ? translate(messages, "challenges.details.ended") : translate(messages, "challenges.details.daysLeft", { days: timeRemaining.toString() })}
               </span>
             </div>
           </div>
@@ -282,7 +285,7 @@ export default async function ChallengePage({ params }: { params: { id: string }
               {/* Description */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Problem Description</CardTitle>
+                  <CardTitle>{translate(messages, "challenges.details.problemDescription")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="prose prose-sm max-w-none">
@@ -295,8 +298,8 @@ export default async function ChallengePage({ params }: { params: { id: string }
               {challenge.testCases && challenge.testCases.length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle>Example Test Cases</CardTitle>
-                    <CardDescription>These are sample inputs and expected outputs for your solution</CardDescription>
+                    <CardTitle>{translate(messages, "challenges.details.exampleTestCases")}</CardTitle>
+                    <CardDescription>{translate(messages, "challenges.details.sampleTestCases")}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
@@ -304,13 +307,13 @@ export default async function ChallengePage({ params }: { params: { id: string }
                         <div key={index} className="border rounded-lg p-4">
                           <div className="grid md:grid-cols-2 gap-4">
                             <div>
-                              <h4 className="font-semibold text-sm mb-2">Input:</h4>
+                              <h4 className="font-semibold text-sm mb-2">{translate(messages, "challenges.details.input")}:</h4>
                               <pre className="bg-muted p-3 rounded text-sm overflow-x-auto">
                                 <code>{testCase.input}</code>
                               </pre>
                             </div>
                             <div>
-                              <h4 className="font-semibold text-sm mb-2">Expected Output:</h4>
+                              <h4 className="font-semibold text-sm mb-2">{translate(messages, "challenges.details.expectedOutput")}:</h4>
                               <pre className="bg-muted p-3 rounded text-sm overflow-x-auto">
                                 <code>{testCase.expectedOutput}</code>
                               </pre>
@@ -329,23 +332,23 @@ export default async function ChallengePage({ params }: { params: { id: string }
               {/* Challenge Info */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Challenge Info</CardTitle>
+                  <CardTitle>{translate(messages, "challenges.details.challengeInfo")}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Status</span>
-                    <Badge variant={hasEnded ? "destructive" : "default"}>{hasEnded ? "Ended" : "Active"}</Badge>
+                    <span className="text-sm text-muted-foreground">{translate(messages, "challenges.details.status")}</span>
+                    <Badge variant={hasEnded ? "destructive" : "default"}>{hasEnded ? translate(messages, "challenges.details.ended") : translate(messages, "challenges.details.active")}</Badge>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Time Limit</span>
-                    <span className="text-sm font-medium">{challenge.timeLimit} minutes</span>
+                    <span className="text-sm text-muted-foreground">{translate(messages, "challenges.details.timeLimit")}</span>
+                    <span className="text-sm font-medium">{challenge.timeLimit} {translate(messages, "challenges.details.minutes")}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Points</span>
+                    <span className="text-sm text-muted-foreground">{translate(messages, "challenges.details.points")}</span>
                     <span className="text-sm font-medium">{challenge.points}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Submissions</span>
+                    <span className="text-sm text-muted-foreground">{translate(messages, "challenges.details.submissions")}</span>
                     <span className="text-sm font-medium">{challenge._count.submissions}</span>
                   </div>
                   <Separator />
@@ -355,7 +358,7 @@ export default async function ChallengePage({ params }: { params: { id: string }
                       <AvatarFallback>{challenge.creator?.name?.charAt(0) || "U"}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="text-sm font-medium">Created by</p>
+                      <p className="text-sm font-medium">{translate(messages, "challenges.details.createdBy")}</p>
                       <p className="text-xs text-muted-foreground">{challenge.creator?.name || "Unknown"}</p>
                     </div>
                   </div>
@@ -365,7 +368,7 @@ export default async function ChallengePage({ params }: { params: { id: string }
               {/* Actions */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Actions</CardTitle>
+                  <CardTitle>{translate(messages, "challenges.details.actions")}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {/* Show submission status card if user has submitted */}
@@ -378,32 +381,32 @@ export default async function ChallengePage({ params }: { params: { id: string }
                       
                       <div className="space-y-2 text-xs text-muted-foreground">
                         <div className="flex justify-between">
-                          <span>Score:</span>
+                          <span>{translate(messages, "challenges.details.score")}:</span>
                           <span className={`font-medium ${
                             userSubmission.score !== null ? 
                               (userSubmission.score >= challenge.points * 0.7 ? 'text-green-600' : 
                                userSubmission.score >= challenge.points * 0.4 ? 'text-yellow-600' : 'text-red-600') 
                               : ''
                           }`}>
-                            {userSubmission.score !== null ? `${userSubmission.score}/${challenge.points}` : 'Not scored yet'}
+                            {userSubmission.score !== null ? `${userSubmission.score}/${challenge.points}` : translate(messages, "challenges.details.notScoredYet")}
                           </span>
                         </div>
                         
                         <div className="flex justify-between">
-                          <span>Submitted:</span>
+                          <span>{translate(messages, "challenges.details.submitted")}:</span>
                           <span>{new Date(userSubmission.submittedAt).toLocaleDateString()}</span>
                         </div>
                         
                         {userSubmission.reviewedAt && (
                           <div className="flex justify-between">
-                            <span>Reviewed:</span>
+                            <span>{translate(messages, "challenges.details.reviewed")}:</span>
                             <span>{new Date(userSubmission.reviewedAt).toLocaleDateString()}</span>
                           </div>
                         )}
                         
                         {userSubmission.reviewedBy && (
                           <div className="flex justify-between">
-                            <span>Reviewed by:</span>
+                            <span>{translate(messages, "challenges.details.reviewedBy")}:</span>
                             <span>{userSubmission.reviewedBy.name || userSubmission.reviewedBy.email?.split('@')[0]}</span>
                           </div>
                         )}
@@ -414,7 +417,7 @@ export default async function ChallengePage({ params }: { params: { id: string }
                         <div className="mt-4 pt-3 border-t border-border/50">
                           <div className="space-y-2">
                             <div className="flex items-center gap-2">
-                              <span className="text-xs font-medium text-muted-foreground">Judge Feedback:</span>
+                              <span className="text-xs font-medium text-muted-foreground">{translate(messages, "challenges.details.judgeFeedback")}:</span>
                               {userSubmission.feedbacks[0].rating && (
                                 <div className="flex">
                                   {[...Array(5)].map((_, i) => (
@@ -438,22 +441,21 @@ export default async function ChallengePage({ params }: { params: { id: string }
                     <Link href={`/challenges/${challenge.id}/submit`} className="block">
                       <Button className="w-full">
                         <Code2 className="h-4 w-4 mr-2" />
-                        {userSubmission ? "Continue Draft" : "Start Coding"}
+                        {userSubmission ? translate(messages, "challenges.details.continueDraft") : translate(messages, "challenges.details.startCoding")}
                       </Button>
                     </Link>
                   )}
-                  {!hasEnded && !user && (
-                    <AuthRequiredTrigger>
-                      <Button className="w-full">
-                        <Code2 className="h-4 w-4 mr-2" />
-                        Start Coding
-                      </Button>
-                    </AuthRequiredTrigger>
+                  {!hasEnded && !user && (                  <AuthRequiredTrigger>
+                    <Button className="w-full">
+                      <Code2 className="h-4 w-4 mr-2" />
+                      {translate(messages, "challenges.details.startCoding")}
+                    </Button>
+                  </AuthRequiredTrigger>
                   )}
 
                   <Link href="/challenges" className="block">
                     <Button variant="outline" className="w-full bg-transparent">
-                      Back to Challenges
+                      {translate(messages, "challenges.details.backToChallenges")}
                     </Button>
                   </Link>
                 </CardContent>

@@ -2,15 +2,16 @@
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { createServerClient } from "@/lib/supabase/server"
+import { DashboardNav } from "@/components/dashboard-nav"
+import { getMessages, translate } from "@/lib/server-i18n"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Trophy, Target, Clock, Code2, TrendingUp, Star, Users, ArrowRight, Zap } from "lucide-react"
-import Link from "next/link"
-import { DashboardNav } from "@/components/dashboard-nav"
+import { Trophy, Target, Code2, Star, Zap, ArrowRight, Clock, Users, TrendingUp } from "lucide-react"
+import { Progress } from "@/components/ui/progress"
 import { Suspense } from "react"
+import Link from "next/link"
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 // Skeleton component para carga
@@ -210,6 +211,21 @@ function getStatusVariant(status: string): "default" | "secondary" | "destructiv
   }
 }
 
+// Función auxiliar para obtener el texto traducido del status
+function getStatusText(status: string, t: (key: string) => string): string {
+  const statusMap: Record<string, string> = {
+    "ACCEPTED": "submissions.status.accepted",
+    "PENDING": "submissions.status.pending",
+    "WRONG_ANSWER": "submissions.status.wrongAnswer",
+    "TIME_LIMIT_EXCEEDED": "submissions.status.timeLimitExceeded",
+    "RUNTIME_ERROR": "submissions.status.runtimeError",
+    "COMPILATION_ERROR": "submissions.status.compilationError",
+    "REJECTED": "submissions.status.rejected"
+  }
+  
+  return t(statusMap[status] || "submissions.status.pending")
+}
+
 // Componente StatsCard reutilizable
 function StatsCard({ 
   title, 
@@ -244,6 +260,9 @@ function StatsCard({
 }
 
 export default async function DashboardPage() {
+  // Get translations for the server
+  const messages = await getMessages()
+  const t = (key: string, params?: Record<string, string>) => translate(messages, key, params)
   try {
     console.log("=== DASHBOARD DEBUG ===")
     
@@ -316,40 +335,40 @@ export default async function DashboardPage() {
               </Avatar>
               <div>
                 <h1 className="text-3xl font-bold text-balance">
-                  Welcome back, {user.name || "Developer"}!
+                  {t("dashboard.welcome")}, {user.name || t("dashboard.developer")}!
                 </h1>
-                <p className="text-muted-foreground">Ready for your next coding challenge?</p>
+                <p className="text-muted-foreground">{t("dashboard.readyForChallenge")}</p>
               </div>
             </div>
             <Badge variant="secondary" className="capitalize">
-              {user.role?.toLowerCase() || "developer"}
+              {user.role ? t(`auth.${user.role.toLowerCase()}`) : t("dashboard.developer")}
             </Badge>
           </div>
 
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <StatsCard 
-              title="Total Points" 
+              title={t("dashboard.totalPoints")} 
               value={stats.totalPoints} 
-              description={`+${user.points || 0} from profile`} 
+              description={`+${user.points || 0} ${t("dashboard.fromProfile")}`} 
               icon={<Trophy className="h-4 w-4 text-primary" />} 
             />
             <StatsCard 
-              title="Submissions" 
+              title={t("dashboard.submissions")} 
               value={stats.totalSubmissions} 
-              description={`${stats.acceptedSubmissions} accepted`} 
+              description={`${stats.acceptedSubmissions} ${t("dashboard.accepted")}`} 
               icon={<Code2 className="h-4 w-4 text-primary" />} 
             />
             <StatsCard 
-              title="Success Rate" 
+              title={t("dashboard.successRate")} 
               value={successRate} 
               icon={<Target className="h-4 w-4 text-primary" />}
               showProgress={true}
             />
             <StatsCard 
-              title="Avg Score" 
+              title={t("dashboard.avgScore")} 
               value={stats.averageScore} 
-              description="Out of 100" 
+              description={t("dashboard.outOf100")} 
               icon={<Star className="h-4 w-4 text-primary" />} 
             />
           </div>
@@ -362,13 +381,13 @@ export default async function DashboardPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle className="flex items-center gap-2">
-                        <Zap className="h-5 w-5 text-primary" /> Active Challenges
+                        <Zap className="h-5 w-5 text-primary" /> {t("challenges.title")}
                       </CardTitle>
-                      <CardDescription>Jump into these live challenges</CardDescription>
+                      <CardDescription>{t("dashboard.jumpIntoLive")}</CardDescription>
                     </div>
                     <Link href="/challenges">
                       <Button variant="outline" size="sm">
-                        View All <ArrowRight className="ml-2 h-4 w-4" />
+                        {t("dashboard.viewAll")} <ArrowRight className="ml-2 h-4 w-4" />
                       </Button>
                     </Link>
                   </div>
@@ -385,31 +404,31 @@ export default async function DashboardPage() {
                                 variant={getDifficultyVariant(challenge.difficulty)}
                                 className="text-xs"
                               >
-                                {challenge.difficulty?.toUpperCase()}
+                                {t(`challenges.difficulty.${challenge.difficulty?.toLowerCase()}`)}
                               </Badge>
                             </div>
                             <div className="flex items-center gap-4 text-sm text-muted-foreground">
                               <span className="flex items-center gap-1">
-                                <Trophy className="h-3 w-3" />{challenge.points} pts
+                                <Trophy className="h-3 w-3" />{challenge.points} {t("dashboard.pts")}
                               </span>
                               <span className="flex items-center gap-1">
-                                <Clock className="h-3 w-3" />{challenge.timeLimit}min
+                                <Clock className="h-3 w-3" />{challenge.timeLimit}{t("dashboard.min")}
                               </span>
                               <span className="flex items-center gap-1">
-                                <Users className="h-3 w-3" />{challenge._count?.submissions || 0} submissions
+                                <Users className="h-3 w-3" />{challenge._count?.submissions || 0} {t("dashboard.submissionsCount")}
                               </span>
                             </div>
                           </div>
                           <Link href={`/challenges/${challenge.id}`}>
-                            <Button size="sm">Start Challenge</Button>
+                            <Button size="sm">{t("dashboard.startChallenge")}</Button>
                           </Link>
                         </div>
                       ))
                     ) : (
                       <div className="text-center py-8 text-muted-foreground">
                         <Zap className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                        <p>No active challenges available</p>
-                        <p className="text-sm">Check back later for new challenges!</p>
+                        <p>{t("dashboard.noChallenges")}</p>
+                        <p className="text-sm">{t("dashboard.checkBackLater")}</p>
                       </div>
                     )}
                   </div>
@@ -422,9 +441,9 @@ export default async function DashboardPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-primary" /> Recent Activity
+                    <TrendingUp className="h-5 w-5 text-primary" /> {t("dashboard.recentActivity")}
                   </CardTitle>
-                  <CardDescription>Your latest submissions</CardDescription>
+                  <CardDescription>{t("dashboard.yourLatest")}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
@@ -438,7 +457,7 @@ export default async function DashboardPage() {
                                 variant={getStatusVariant(submission.status)}
                                 className="text-xs"
                               >
-                                {submission.status.replace("_", " ")}
+                                {getStatusText(submission.status, t)}
                               </Badge>
                               {submission.score && (
                                 <span className="text-xs text-muted-foreground">
@@ -457,8 +476,8 @@ export default async function DashboardPage() {
                     ) : (
                       <div className="text-center py-8 text-muted-foreground">
                         <Code2 className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                        <p>No submissions yet</p>
-                        <p className="text-sm">Start your first challenge!</p>
+                        <p>{t("dashboard.noSubmissionsYet")}</p>
+                        <p className="text-sm">{t("dashboard.startFirst")}</p>
                       </div>
                     )}
                   </div>
@@ -468,29 +487,29 @@ export default async function DashboardPage() {
               {/* Quick Actions */}
               <Card className="mt-6">
                 <CardHeader>
-                  <CardTitle>Quick Actions</CardTitle>
+                  <CardTitle>{t("dashboard.quickActions")}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <Link href="/challenges" className="block">
                     <Button variant="outline" className="w-full justify-start bg-transparent">
-                      <Target className="mr-2 h-4 w-4" /> Browse Challenges
+                      <Target className="mr-2 h-4 w-4" /> {t("dashboard.browseChallenges")}
                     </Button>
                   </Link>
                   <Link href="/leaderboard" className="block">
                     <Button variant="outline" className="w-full justify-start bg-transparent">
-                      <Trophy className="mr-2 h-4 w-4" /> View Leaderboard
+                      <Trophy className="mr-2 h-4 w-4" /> {t("dashboard.viewLeaderboard")}
                     </Button>
                   </Link>
                   {user.role === "CREATOR" && (
                     <>
                       <Link href="/challenges/create" className="block">
                         <Button variant="outline" className="w-full justify-start bg-transparent">
-                          <Code2 className="mr-2 h-4 w-4" /> Create Challenge
+                          <Code2 className="mr-2 h-4 w-4" /> {t("dashboard.createChallenge")}
                         </Button>
                       </Link>
                       <Link href="/challenges/manage" className="block">
                         <Button variant="outline" className="w-full justify-start bg-transparent">
-                          <Trophy className="mr-2 h-4 w-4" /> Manage My Challenges
+                          <Trophy className="mr-2 h-4 w-4" /> {t("dashboard.manageMyChallenges")}
                         </Button>
                       </Link>
                     </>
@@ -499,12 +518,12 @@ export default async function DashboardPage() {
                     <>
                       <Link href="/judge/submissions" className="block">
                         <Button variant="outline" className="w-full justify-start bg-transparent">
-                          <Target className="mr-2 h-4 w-4" /> Review Submissions
+                          <Target className="mr-2 h-4 w-4" /> {t("dashboard.reviewSubmissions")}
                         </Button>
                       </Link>
                       <Link href="/judge/challenges" className="block">
                         <Button variant="outline" className="w-full justify-start bg-transparent">
-                          <Users className="mr-2 h-4 w-4" /> Judge Challenges
+                          <Users className="mr-2 h-4 w-4" /> {t("dashboard.judgeChallenges")}
                         </Button>
                       </Link>
                     </>

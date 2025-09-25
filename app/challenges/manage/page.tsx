@@ -9,6 +9,7 @@ import { ArrowLeft, Plus, Edit, Trash2, Eye, Users, BarChart3, Settings, Clock, 
 import Link from "next/link"
 import { DashboardNav } from "@/components/dashboard-nav"
 import { toast } from "sonner"
+import { useTranslations } from "@/lib/i18n"
 
 interface Challenge {
   id: string
@@ -60,6 +61,7 @@ function getStatusVariant(status: string): "default" | "secondary" | "destructiv
 
 export default function ManageChallengesPage() {
   const router = useRouter()
+  const t = useTranslations()
   const [challenges, setChallenges] = useState<Challenge[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -79,7 +81,7 @@ export default function ManageChallengesPage() {
         setChallenges(data.challenges)
       } catch (error) {
         console.error("Error fetching challenges:", error)
-        toast.error("Failed to load challenges")
+        toast.error(t("manage.loadError"))
       } finally {
         setLoading(false)
       }
@@ -111,15 +113,15 @@ export default function ManageChallengesPage() {
         )
       )
 
-      toast.success("Challenge published successfully!")
+      toast.success(t("manage.publishSuccess"))
     } catch (error) {
       console.error("Error publishing challenge:", error)
-      toast.error("Failed to publish challenge")
+      toast.error(t("manage.publishError"))
     }
   }
 
   const handleDeleteChallenge = async (challengeId: string) => {
-    if (!confirm("Are you sure you want to delete this challenge? This action cannot be undone.")) {
+    if (!confirm(t("manage.deleteConfirm"))) {
       return
     }
 
@@ -135,10 +137,10 @@ export default function ManageChallengesPage() {
       // Update local state
       setChallenges(prev => prev.filter(challenge => challenge.id !== challengeId))
 
-      toast.success("Challenge deleted successfully!")
+      toast.success(t("manage.deleteSuccess"))
     } catch (error) {
       console.error("Error deleting challenge:", error)
-      toast.error("Failed to delete challenge")
+      toast.error(t("manage.deleteError"))
     }
   }
 
@@ -172,7 +174,7 @@ export default function ManageChallengesPage() {
             <div className="flex items-center justify-center h-96">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Loading challenges...</p>
+                <p className="text-muted-foreground">{t("manage.loadingChallenges")}</p>
               </div>
             </div>
           </div>
@@ -191,17 +193,17 @@ export default function ManageChallengesPage() {
           <div className="mb-8">
             <Link href="/dashboard" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-4">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Dashboard
+              {t("manage.backToDashboard")}
             </Link>
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold mb-2">Manage Challenges</h1>
-                <p className="text-muted-foreground">Create and manage your coding challenges</p>
+                <h1 className="text-3xl font-bold mb-2">{t("manage.title")}</h1>
+                <p className="text-muted-foreground">{t("manage.createAndManage")}</p>
               </div>
               <Button asChild>
                 <Link href="/challenges/create">
                   <Plus className="h-4 w-4 mr-2" />
-                  Create New Challenge
+                  {t("manage.createNewChallenge")}
                 </Link>
               </Button>
             </div>
@@ -211,45 +213,45 @@ export default function ManageChallengesPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Challenges</CardTitle>
+                <CardTitle className="text-sm font-medium">{t("manage.totalChallenges")}</CardTitle>
                 <BarChart3 className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{challenges.length}</div>
-                <p className="text-xs text-muted-foreground">Created by you</p>
+                <p className="text-xs text-muted-foreground">{t("manage.createdByYou")}</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active</CardTitle>
+                <CardTitle className="text-sm font-medium">{t("manage.active")}</CardTitle>
                 <Eye className="h-4 w-4 text-green-500" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{activeChallenges.length}</div>
-                <p className="text-xs text-muted-foreground">Currently running</p>
+                <p className="text-xs text-muted-foreground">{t("manage.currentlyRunning")}</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Submissions</CardTitle>
+                <CardTitle className="text-sm font-medium">{t("manage.totalSubmissions")}</CardTitle>
                 <Users className="h-4 w-4 text-blue-500" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{totalSubmissions}</div>
-                <p className="text-xs text-muted-foreground">Across all challenges</p>
+                <p className="text-xs text-muted-foreground">{t("manage.acrossAllChallenges")}</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Participants</CardTitle>
+                <CardTitle className="text-sm font-medium">{t("manage.participants")}</CardTitle>
                 <Users className="h-4 w-4 text-purple-500" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{challenges.length}</div>
-                <p className="text-xs text-muted-foreground">Total created</p>
+                <p className="text-xs text-muted-foreground">{t("manage.uniqueParticipants")}</p>
               </CardContent>
             </Card>
           </div>
@@ -260,10 +262,10 @@ export default function ManageChallengesPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Edit className="h-5 w-5 text-yellow-500" />
-                  Draft Challenges
+                  {t("manage.draftChallenges")}
                 </CardTitle>
                 <CardDescription>
-                  Challenges that are still being worked on
+                  {t("manage.draftChallenges")}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -279,17 +281,17 @@ export default function ManageChallengesPage() {
                                 variant={getDifficultyVariant(challenge.difficulty)}
                                 className="text-xs"
                               >
-                                {challenge.difficulty}
+                                {t(`challenges.difficulty.${challenge.difficulty.toLowerCase()}`)}
                               </Badge>
                               <Badge variant="secondary" className="text-xs">
-                                DRAFT
+                                {t("manage.draft")}
                               </Badge>
                             </div>
                             
                             <div className="grid grid-cols-3 gap-4 text-sm text-muted-foreground">
-                              <span>Points: {challenge.points}</span>
-                              <span>Time: {challenge.timeLimit} min</span>
-                              <span>Created: {new Date(challenge.createdAt).toLocaleDateString()}</span>
+                              <span>{t("create.points")}: {challenge.points}</span>
+                              <span>{t("create.timeLimit")}: {challenge.timeLimit} {t("create.minutes")}</span>
+                              <span>{t("challenges.details.createdBy")}: {new Date(challenge.createdAt).toLocaleDateString()}</span>
                             </div>
                           </div>
                           
@@ -300,13 +302,13 @@ export default function ManageChallengesPage() {
                               onClick={() => handleEditChallenge(challenge.id)}
                             >
                               <Edit className="h-4 w-4 mr-2" />
-                              Edit
+                              {t("manage.edit")}
                             </Button>
                             <Button 
                               size="sm"
                               onClick={() => handlePublishChallenge(challenge.id)}
                             >
-                              Publish
+                              {t("manage.publish")}
                             </Button>
                             <Button 
                               size="sm" 
@@ -330,10 +332,10 @@ export default function ManageChallengesPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Eye className="h-5 w-5 text-green-500" />
-                Active Challenges
+                {t("manage.activeChallenges")}
               </CardTitle>
               <CardDescription>
-                Challenges currently accepting submissions
+                {t("manage.currentlyRunning")}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -349,43 +351,43 @@ export default function ManageChallengesPage() {
                               variant={getDifficultyVariant(challenge.difficulty)}
                               className="text-xs"
                             >
-                              {challenge.difficulty}
+                              {t(`challenges.difficulty.${challenge.difficulty.toLowerCase()}`)}
                             </Badge>
                             <Badge
                               variant={getStatusVariant(challenge.status)}
                               className="text-xs"
                             >
-                              {challenge.status}
+                              {t(`challenges.status.${challenge.status.toLowerCase()}`)}
                             </Badge>
                           </div>
                           
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-3">
                             <div>
-                              <span className="text-muted-foreground">Points:</span>
+                              <span className="text-muted-foreground">{t("create.points")}:</span>
                               <p className="font-medium">{challenge.points}</p>
                             </div>
                             <div>
-                              <span className="text-muted-foreground">Time Limit:</span>
-                              <p className="font-medium">{challenge.timeLimit} min</p>
+                              <span className="text-muted-foreground">{t("create.timeLimit")}:</span>
+                              <p className="font-medium">{challenge.timeLimit} {t("create.minutes")}</p>
                             </div>
                             <div>
-                              <span className="text-muted-foreground">Submissions:</span>
+                              <span className="text-muted-foreground">{t("manage.submissions")}:</span>
                               <p className="font-medium">{challenge._count.submissions}</p>
                             </div>
                             <div>
-                              <span className="text-muted-foreground">Test Cases:</span>
+                              <span className="text-muted-foreground">{t("create.testCasesTitle")}:</span>
                               <p className="font-medium">{challenge._count.testCases}</p>
                             </div>
                           </div>
 
                           <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
-                              <span className="text-muted-foreground">Created:</span>
+                              <span className="text-muted-foreground">{t("challenges.details.createdBy")}:</span>
                               <p className="font-medium">{new Date(challenge.createdAt).toLocaleDateString()}</p>
                             </div>
                             <div>
-                              <span className="text-muted-foreground">Status:</span>
-                              <p className="font-medium">{challenge.status}</p>
+                              <span className="text-muted-foreground">{t("challenges.details.status")}:</span>
+                              <p className="font-medium">{t(`challenges.status.${challenge.status.toLowerCase()}`)}</p>
                             </div>
                           </div>
                         </div>
@@ -398,7 +400,7 @@ export default function ManageChallengesPage() {
                           onClick={() => handleViewAnalytics(challenge.id)}
                         >
                           <BarChart3 className="h-4 w-4 mr-2" />
-                          View Analytics
+                          {t("manage.viewAnalytics")}
                         </Button>
                         <Button 
                           size="sm" 
@@ -406,7 +408,7 @@ export default function ManageChallengesPage() {
                           onClick={() => handleViewSubmissions(challenge.id)}
                         >
                           <Users className="h-4 w-4 mr-2" />
-                          View Submissions
+                          {t("manage.viewSubmissions")}
                         </Button>
                         <Button 
                           size="sm" 
@@ -414,7 +416,7 @@ export default function ManageChallengesPage() {
                           onClick={() => handleEditChallenge(challenge.id)}
                         >
                           <Edit className="h-4 w-4 mr-2" />
-                          Edit
+                          {t("manage.edit")}
                         </Button>
                         <Button 
                           size="sm" 
@@ -422,7 +424,7 @@ export default function ManageChallengesPage() {
                           onClick={() => handleChallengeSettings(challenge.id)}
                         >
                           <Settings className="h-4 w-4 mr-2" />
-                          Settings
+                          {t("manage.settings")}
                         </Button>
                       </div>
                     </CardContent>
@@ -437,10 +439,10 @@ export default function ManageChallengesPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BarChart3 className="h-5 w-5 text-blue-500" />
-                Completed Challenges
+                {t("manage.completedChallenges")}
               </CardTitle>
               <CardDescription>
-                Challenges that have finished running
+                {t("manage.completedChallenges")}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -456,35 +458,51 @@ export default function ManageChallengesPage() {
                               variant={getDifficultyVariant(challenge.difficulty)}
                               className="text-xs"
                             >
-                              {challenge.difficulty}
+                              {t(`challenges.difficulty.${challenge.difficulty.toLowerCase()}`)}
                             </Badge>
                             <Badge variant="secondary" className="text-xs">
-                              COMPLETED
+                              {t("manage.completed")}
                             </Badge>
                           </div>
                           
                           <div className="grid grid-cols-4 gap-4 text-sm text-muted-foreground">
-                            <span>Submissions: {challenge._count.submissions}</span>
-                            <span>Test Cases: {challenge._count.testCases}</span>
-                            <span>Points: {challenge.points}</span>
-                            <span>Time: {challenge.timeLimit} min</span>
+                            <span>{t("manage.submissions")}: {challenge._count.submissions}</span>
+                            <span>{t("create.testCasesTitle")}: {challenge._count.testCases}</span>
+                            <span>{t("create.points")}: {challenge.points}</span>
+                            <span>{t("create.timeLimit")}: {challenge.timeLimit} {t("create.minutes")}</span>
                           </div>
                         </div>
                         
                         <div className="flex gap-2">
                           <Button size="sm" variant="outline">
                             <BarChart3 className="h-4 w-4 mr-2" />
-                            View Results
+                            {t("manage.viewAnalytics")}
                           </Button>
                           <Button size="sm" variant="outline">
                             <Eye className="h-4 w-4 mr-2" />
-                            Archive
+                            {t("manage.viewAnalytics")}
                           </Button>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
                 ))}
+                
+                {completedChallenges.length === 0 && challenges.length === 0 && (
+                  <div className="text-center py-12">
+                    <div className="text-muted-foreground mb-4">
+                      <BarChart3 className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                      <h3 className="text-lg font-semibold mb-2">{t("manage.noChallenges")}</h3>
+                      <p className="text-sm">{t("manage.createFirstChallenge")}</p>
+                    </div>
+                    <Button asChild>
+                      <Link href="/challenges/create">
+                        <Plus className="h-4 w-4 mr-2" />
+                        {t("manage.createNewChallenge")}
+                      </Link>
+                    </Button>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

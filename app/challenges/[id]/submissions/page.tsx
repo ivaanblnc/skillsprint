@@ -15,6 +15,7 @@ import { CheckCircle, XCircle, AlertCircle, Code2, Download, ArrowLeft, Eye, Fil
 import Link from "next/link"
 import { toast } from "sonner"
 import { DashboardNav } from "@/components/dashboard-nav"
+import { useTranslations } from "@/lib/i18n"
 
 interface Submission {
   id: string
@@ -78,6 +79,7 @@ function getStatusIcon(status: string) {
 
 export default function ChallengeSubmissionsPage({ params }: { params: { id: string } }) {
   const router = useRouter()
+  const t = useTranslations()
   const [submissions, setSubmissions] = useState<Submission[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("ALL")
@@ -102,7 +104,7 @@ export default function ChallengeSubmissionsPage({ params }: { params: { id: str
         setSubmissions(data.submissions)
       } catch (error) {
         console.error("Error fetching submissions:", error)
-        toast.error("Failed to load submissions")
+        toast.error(t("submissions.loadError"))
       } finally {
         setLoading(false)
       }
@@ -196,7 +198,7 @@ export default function ChallengeSubmissionsPage({ params }: { params: { id: str
       document.body.removeChild(a)
     } catch (error) {
       console.error('Download error:', error)
-      toast.error('Failed to download file')
+      toast.error(t("submissions.downloadError"))
     }
   }
 
@@ -218,7 +220,7 @@ export default function ChallengeSubmissionsPage({ params }: { params: { id: str
             <div className="flex items-center justify-center h-96">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Loading submissions...</p>
+                <p className="text-muted-foreground">{t("submissions.loading")}</p>
               </div>
             </div>
           </div>
@@ -237,12 +239,12 @@ export default function ChallengeSubmissionsPage({ params }: { params: { id: str
           <div className="mb-8">
             <Link href="/challenges/manage" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-4">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Manage Challenges
+              {t("submissions.backToManage")}
             </Link>
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold mb-2">Challenge Submissions</h1>
-                <p className="text-muted-foreground">Review and evaluate participant submissions</p>
+                <h1 className="text-3xl font-bold mb-2">{t("submissions.title")}</h1>
+                <p className="text-muted-foreground">{t("submissions.reviewAndEvaluate")}</p>
               </div>
             </div>
           </div>
@@ -251,7 +253,7 @@ export default function ChallengeSubmissionsPage({ params }: { params: { id: str
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Submissions</CardTitle>
+                <CardTitle className="text-sm font-medium">{t("submissions.totalSubmissions")}</CardTitle>
                 <FileText className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent>
@@ -261,7 +263,7 @@ export default function ChallengeSubmissionsPage({ params }: { params: { id: str
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pending Review</CardTitle>
+                <CardTitle className="text-sm font-medium">{t("submissions.pendingReview")}</CardTitle>
                 <AlertCircle className="h-4 w-4 text-yellow-500" />
               </CardHeader>
               <CardContent>
@@ -271,7 +273,7 @@ export default function ChallengeSubmissionsPage({ params }: { params: { id: str
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Accepted</CardTitle>
+                <CardTitle className="text-sm font-medium">{t("submissions.accepted")}</CardTitle>
                 <CheckCircle className="h-4 w-4 text-green-500" />
               </CardHeader>
               <CardContent>
@@ -281,7 +283,7 @@ export default function ChallengeSubmissionsPage({ params }: { params: { id: str
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Rejected</CardTitle>
+                <CardTitle className="text-sm font-medium">{t("submissions.rejected")}</CardTitle>
                 <XCircle className="h-4 w-4 text-red-500" />
               </CardHeader>
               <CardContent>
@@ -295,19 +297,19 @@ export default function ChallengeSubmissionsPage({ params }: { params: { id: str
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Code2 className="h-5 w-5 text-primary" />
-                Submissions Review
+                {t("submissions.submissionsReview")}
               </CardTitle>
               <CardDescription>
-                Review participant submissions and provide feedback
+                {t("submissions.reviewParticipant")}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-4">
-                  <TabsTrigger value="ALL">All ({submissions.length})</TabsTrigger>
-                  <TabsTrigger value="PENDING">Pending ({pendingCount})</TabsTrigger>
-                  <TabsTrigger value="ACCEPTED">Accepted ({acceptedCount})</TabsTrigger>
-                  <TabsTrigger value="REJECTED">Rejected ({rejectedCount})</TabsTrigger>
+                  <TabsTrigger value="ALL">{t("submissions.allTab")} ({submissions.length})</TabsTrigger>
+                  <TabsTrigger value="PENDING">{t("submissions.pendingTab")} ({pendingCount})</TabsTrigger>
+                  <TabsTrigger value="ACCEPTED">{t("submissions.acceptedTab")} ({acceptedCount})</TabsTrigger>
+                  <TabsTrigger value="REJECTED">{t("submissions.rejectedTab")} ({rejectedCount})</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value={activeTab} className="mt-6">
@@ -315,7 +317,7 @@ export default function ChallengeSubmissionsPage({ params }: { params: { id: str
                     {filteredSubmissions.length === 0 ? (
                       <div className="text-center py-12 text-muted-foreground">
                         <AlertCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground/30" />
-                        <p>No submissions found for this category</p>
+                        <p>{t("submissions.noSubmissionsFound")}</p>
                       </div>
                     ) : (
                       filteredSubmissions.map((submission) => (
@@ -330,10 +332,10 @@ export default function ChallengeSubmissionsPage({ params }: { params: { id: str
                                     className="text-xs flex items-center gap-1"
                                   >
                                     {getStatusIcon(submission.status)}
-                                    {submission.status}
+                                    {t(`submissions.status.${submission.status.toLowerCase()}`)}
                                   </Badge>
                                   <span className="text-sm text-muted-foreground">
-                                    Score: {submission.score !== null ? `${submission.score}/${submission.challenge.points}` : 'Not graded'}
+                                    {t("submissions.scoreLabel")}: {submission.score !== null ? `${submission.score}/${submission.challenge.points}` : t("submissions.notGraded")}
                                   </span>
                                 </div>
                                 
@@ -347,21 +349,21 @@ export default function ChallengeSubmissionsPage({ params }: { params: { id: str
                                     </Avatar>
                                     <span>{submission.user.name}</span> 
                                   </div>
-                                  <span>Language: {submission.language || 'N/A'}</span>
-                                  <span>Submitted: {new Date(submission.submittedAt).toLocaleDateString()}</span>
-                                  {submission.executionTime && <span>Runtime: {submission.executionTime}ms</span>}
-                                  {submission.memory && <span>Memory: {submission.memory}KB</span>}
+                                  <span>{t("submissions.languageLabel")}: {submission.language || 'N/A'}</span>
+                                  <span>{t("submissions.submittedLabel")}: {new Date(submission.submittedAt).toLocaleDateString()}</span>
+                                  {submission.executionTime && <span>{t("submissions.runtimeLabel")}: {submission.executionTime}ms</span>}
+                                  {submission.memory && <span>{t("submissions.memoryLabel")}: {submission.memory}KB</span>}
                                 </div>
 
                                 {/* Feedback */}
                                 {submission.feedbacks.length > 0 && (
                                   <div className="bg-blue-50 dark:bg-blue-950 rounded-lg p-3 mb-4">
-                                    <h4 className="text-sm font-medium mb-2">Feedback:</h4>
+                                    <h4 className="text-sm font-medium mb-2">{t("submissions.feedbackLabel")}:</h4>
                                     {submission.feedbacks.map((feedback) => (
                                       <div key={feedback.id} className="text-sm">
                                         <p className="mb-1">{feedback.comment}</p>
                                         <p className="text-xs text-muted-foreground">
-                                          Rating: {feedback.rating}/5 - By {feedback.creator}
+                                          {t("submissions.ratingLabel")}: {feedback.rating}/5 - {t("submissions.byLabel")} {feedback.creator}
                                         </p>
                                       </div>
                                     ))}
@@ -377,7 +379,7 @@ export default function ChallengeSubmissionsPage({ params }: { params: { id: str
                                 onClick={() => handleViewCode(submission)}
                               >
                                 <Eye className="h-4 w-4 mr-2" />
-                                View Code
+                                {t("submissions.viewCode")}
                               </Button>
                               
                               {submission.hasFile && (
@@ -387,7 +389,7 @@ export default function ChallengeSubmissionsPage({ params }: { params: { id: str
                                   onClick={() => handleDownloadFile(submission.id)}
                                 >
                                   <Download className="h-4 w-4 mr-2" />
-                                  Download File
+                                  {t("submissions.downloadFile")}
                                 </Button>
                               )}
                               
@@ -400,7 +402,7 @@ export default function ChallengeSubmissionsPage({ params }: { params: { id: str
                                     disabled={loadingSubmissions.has(submission.id)}
                                   >
                                     <CheckCircle className="h-4 w-4 mr-2" />
-                                    {loadingSubmissions.has(submission.id) ? 'Processing...' : 'Accept'}
+                                    {loadingSubmissions.has(submission.id) ? t("submissions.processing") : t("submissions.accept")}
                                   </Button>
                                   <Button 
                                     size="sm" 
@@ -409,7 +411,7 @@ export default function ChallengeSubmissionsPage({ params }: { params: { id: str
                                     disabled={loadingSubmissions.has(submission.id)}
                                   >
                                     <XCircle className="h-4 w-4 mr-2" />
-                                    {loadingSubmissions.has(submission.id) ? 'Processing...' : 'Reject'}
+                                    {loadingSubmissions.has(submission.id) ? t("submissions.processing") : t("submissions.reject")}
                                   </Button>
                                 </>
                               )}
@@ -430,9 +432,9 @@ export default function ChallengeSubmissionsPage({ params }: { params: { id: str
       <Dialog open={showCodeModal} onOpenChange={setShowCodeModal}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Submission Code</DialogTitle>
+            <DialogTitle>{t("submissions.submissionCode")}</DialogTitle>
             <DialogDescription>
-              {selectedSubmission && `Submitted by ${selectedSubmission.user.name} in ${selectedSubmission.language}`}
+              {selectedSubmission && `${t("submissions.submittedBy")} ${selectedSubmission.user.name} ${selectedSubmission.language ? `in ${selectedSubmission.language}` : ''}`}
             </DialogDescription>
           </DialogHeader>
           
@@ -440,7 +442,7 @@ export default function ChallengeSubmissionsPage({ params }: { params: { id: str
             <div className="mt-4">
               <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">Code Submission</span>
+                  <span className="text-sm font-medium">{t("submissions.codeSubmission")}</span>
                   {selectedSubmission.hasFile && (
                     <Button 
                       size="sm" 
@@ -448,12 +450,12 @@ export default function ChallengeSubmissionsPage({ params }: { params: { id: str
                       onClick={() => handleDownloadFile(selectedSubmission.id)}
                     >
                       <Download className="h-3 w-3 mr-1" />
-                      Download File
+                      {t("submissions.downloadFile")}
                     </Button>
                   )}
                 </div>
                 <pre className="text-sm overflow-x-auto max-h-96 overflow-y-auto whitespace-pre-wrap">
-                  <code>{selectedSubmission.code || 'No code content available. This submission may contain only uploaded files.'}</code>
+                  <code>{selectedSubmission.code || t("submissions.noCodeAvailable")}</code>
                 </pre>
               </div>
             </div>
@@ -461,7 +463,7 @@ export default function ChallengeSubmissionsPage({ params }: { params: { id: str
           
           <DialogFooter>
             <Button onClick={() => setShowCodeModal(false)}>
-              Close
+              {t("submissions.close")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -471,9 +473,9 @@ export default function ChallengeSubmissionsPage({ params }: { params: { id: str
       <Dialog open={showReviewModal} onOpenChange={setShowReviewModal}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Review Submission</DialogTitle>
+            <DialogTitle>{t("submissions.reviewSubmission")}</DialogTitle>
             <DialogDescription>
-              Set the score and provide feedback for this submission.
+              {t("submissions.setScoreFeedback")}
             </DialogDescription>
           </DialogHeader>
           
@@ -482,15 +484,15 @@ export default function ChallengeSubmissionsPage({ params }: { params: { id: str
               <div className="space-y-2">
                 <h4 className="font-medium">{selectedSubmission.challenge.title}</h4>
                 <p className="text-sm text-muted-foreground">
-                  Submitted by {selectedSubmission.user.name}
+                  {t("submissions.submittedBy")} {selectedSubmission.user.name}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Max points: {selectedSubmission.challenge.points}
+                  {t("submissions.maxPoints")}: {selectedSubmission.challenge.points}
                 </p>
               </div>
               
               <div className="grid gap-2">
-                <Label htmlFor="score">Score</Label>
+                <Label htmlFor="score">{t("submissions.scoreField")}</Label>
                 <Input
                   id="score"
                   type="number"
@@ -498,17 +500,17 @@ export default function ChallengeSubmissionsPage({ params }: { params: { id: str
                   max={selectedSubmission.challenge.points}
                   value={customScore}
                   onChange={(e) => setCustomScore(Number(e.target.value))}
-                  placeholder="Enter score"
+                  placeholder={t("submissions.enterScore")}
                 />
               </div>
               
               <div className="grid gap-2">
-                <Label htmlFor="feedback">Feedback (Optional)</Label>
+                <Label htmlFor="feedback">{t("submissions.feedbackField")}</Label>
                 <Textarea
                   id="feedback"
                   value={feedback}
                   onChange={(e) => setFeedback(e.target.value)}
-                  placeholder="Provide feedback for the participant..."
+                  placeholder={t("submissions.provideFeedback")}
                   rows={3}
                 />
               </div>
@@ -517,7 +519,7 @@ export default function ChallengeSubmissionsPage({ params }: { params: { id: str
           
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowReviewModal(false)}>
-              Cancel
+              {t("submissions.cancel")}
             </Button>
             <Button 
               onClick={handleConfirmReview}
@@ -525,7 +527,7 @@ export default function ChallengeSubmissionsPage({ params }: { params: { id: str
               variant={customScore > 0 ? "default" : "destructive"}
               disabled={!selectedSubmission || customScore < 0 || customScore > (selectedSubmission?.challenge.points || 0)}
             >
-              {customScore > 0 ? 'Accept' : 'Reject'} Submission
+              {customScore > 0 ? t("submissions.acceptSubmission") : t("submissions.rejectSubmission")}
             </Button>
           </DialogFooter>
         </DialogContent>

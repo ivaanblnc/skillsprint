@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { DashboardNav } from "@/components/dashboard-nav"
 import { ChallengesList } from "@/components/challenges-list"
+import { getMessages, translate } from "@/lib/server-i18n"
 
 // Revalidate this page every 30 seconds to show updated submission statuses
 export const revalidate = 30
@@ -34,6 +35,8 @@ async function getChallenges() {
 
 export default async function ChallengesPage() {
   const challenges = await getChallenges()
+  const messages = await getMessages()
+  const t = (key: string, params?: Record<string, string>) => translate(messages, key, params)
 
   return (
     <div className="min-h-screen bg-background">
@@ -41,9 +44,9 @@ export default async function ChallengesPage() {
 
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2 text-balance">Coding Challenges</h1>
+          <h1 className="text-3xl font-bold mb-2 text-balance">{t("challenges.title")}</h1>
           <p className="text-muted-foreground text-pretty">
-            Test your skills with our collection of programming challenges
+            {t("challenges.allChallenges")}
           </p>
         </div>
 

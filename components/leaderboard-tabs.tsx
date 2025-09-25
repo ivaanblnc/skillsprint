@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Trophy, Medal, Award, Crown, Clock, Zap, Target } from "lucide-react"
+import { useTranslations } from "@/lib/i18n"
 
 interface User {
   id: string
@@ -46,6 +47,7 @@ export function LeaderboardTabs({
   challengeLeaderboards,
   currentUserId,
 }: LeaderboardTabsProps) {
+  const t = useTranslations()
   const getRankIcon = (rank: number) => {
     if (rank === 1) return <Crown className="h-5 w-5 text-yellow-500" />
     if (rank === 2) return <Medal className="h-5 w-5 text-gray-400" />
@@ -63,9 +65,9 @@ export function LeaderboardTabs({
   return (
     <Tabs defaultValue="overall" className="space-y-6">
       <TabsList className="grid w-full grid-cols-3">
-        <TabsTrigger value="overall">Overall</TabsTrigger>
-        <TabsTrigger value="recent">Recent</TabsTrigger>
-        <TabsTrigger value="challenges">By Challenge</TabsTrigger>
+        <TabsTrigger value="overall">{t("leaderboard.tabs.overall")}</TabsTrigger>
+        <TabsTrigger value="recent">{t("leaderboard.tabs.recent")}</TabsTrigger>
+        <TabsTrigger value="challenges">{t("leaderboard.tabs.challenges")}</TabsTrigger>
       </TabsList>
 
       <TabsContent value="overall" className="space-y-6">
@@ -73,9 +75,9 @@ export function LeaderboardTabs({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Trophy className="h-5 w-5 text-primary" />
-              Top Performers
+              {t("leaderboard.sections.topPerformers")}
             </CardTitle>
-            <CardDescription>Ranked by total points earned</CardDescription>
+            <CardDescription>{t("leaderboard.sections.topPerformersDesc")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -103,9 +105,9 @@ export function LeaderboardTabs({
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Badge variant="secondary" className="text-xs capitalize">
-                            {user.role.toLowerCase()}
+                            {t(`profile.roles.${user.role.toLowerCase()}`)}
                           </Badge>
-                          {user._count && <span>{user._count.submissions} solutions</span>}
+                          {user._count && <span>{user._count.submissions} {t("leaderboard.labels.solutions")}</span>}
                         </div>
                       </div>
                     </div>
@@ -126,9 +128,9 @@ export function LeaderboardTabs({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Zap className="h-5 w-5 text-primary" />
-              Recent Top Performers
+              {t("leaderboard.sections.recentTopPerformers")}
             </CardTitle>
-            <CardDescription>Most active developers in the last 30 days</CardDescription>
+            <CardDescription>{t("leaderboard.sections.recentTopPerformersDesc")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -156,9 +158,9 @@ export function LeaderboardTabs({
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Badge variant="secondary" className="text-xs capitalize">
-                            {user.role.toLowerCase()}
+                            {t(`profile.roles.${user.role.toLowerCase()}`)}
                           </Badge>
-                          <span>{user._count.submissions} recent solutions</span>
+                          <span>{user._count?.submissions || 0} {t("leaderboard.labels.recentSolutions")}</span>
                         </div>
                       </div>
                     </div>
@@ -181,7 +183,7 @@ export function LeaderboardTabs({
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-lg text-balance">{challenge.title}</CardTitle>
-                  <CardDescription>Top performers for this challenge</CardDescription>
+                  <CardDescription>{t("leaderboard.sections.topPerformersForChallenge")}</CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge
@@ -255,8 +257,8 @@ export function LeaderboardTabs({
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   <Target className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p>No submissions yet</p>
-                  <p className="text-sm">Be the first to solve this challenge!</p>
+                  <p>{t("leaderboard.empty.noSubmissions")}</p>
+                  <p className="text-sm">{t("leaderboard.empty.beFirst")}</p>
                 </div>
               )}
             </CardContent>

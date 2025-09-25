@@ -8,6 +8,7 @@ import { ArrowLeft, TrendingUp, Users, CheckCircle, Clock, BarChart3 } from "luc
 import Link from "next/link"
 import { DashboardNav } from "@/components/dashboard-nav"
 import { toast } from "sonner"
+import { useTranslations } from "@/lib/i18n"
 
 interface Challenge {
   id: string
@@ -35,6 +36,7 @@ interface Analytics {
 export default function ChallengeAnalyticsPage() {
   const params = useParams()
   const challengeId = params.id as string
+  const t = useTranslations()
   
   const [loading, setLoading] = useState(true)
   const [challenge, setChallenge] = useState<Challenge | null>(null)
@@ -61,7 +63,7 @@ export default function ChallengeAnalyticsPage() {
 
       } catch (error) {
         console.error("Error fetching data:", error)
-        toast.error("Failed to load analytics data")
+        toast.error(t("analytics.loadError"))
       } finally {
         setLoading(false)
       }
@@ -81,7 +83,7 @@ export default function ChallengeAnalyticsPage() {
             <div className="flex items-center justify-center h-96">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Loading analytics...</p>
+                <p className="text-muted-foreground">{t("analytics.loading")}</p>
               </div>
             </div>
           </div>
@@ -98,10 +100,10 @@ export default function ChallengeAnalyticsPage() {
           <div className="mb-6">
             <Link href="/challenges/manage" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-4">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Manage Challenges
+              {t("analytics.backToManage")}
             </Link>
             <div>
-              <h1 className="text-3xl font-bold mb-2">Challenge Analytics</h1>
+              <h1 className="text-3xl font-bold mb-2">{t("analytics.title")}</h1>
               {challenge && (
                 <div className="flex items-center gap-3">
                   <p className="text-muted-foreground">{challenge.title}</p>
@@ -109,9 +111,9 @@ export default function ChallengeAnalyticsPage() {
                     challenge.difficulty === "EASY" ? "secondary" :
                     challenge.difficulty === "MEDIUM" ? "default" : "destructive"
                   }>
-                    {challenge.difficulty}
+                    {t(`challenges.difficulty.${challenge.difficulty.toLowerCase()}`)}
                   </Badge>
-                  <Badge variant="outline">{challenge.points} points</Badge>
+                  <Badge variant="outline">{challenge.points} {t("challenges.details.points")}</Badge>
                 </div>
               )}
             </div>
@@ -123,33 +125,33 @@ export default function ChallengeAnalyticsPage() {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Submissions</CardTitle>
+                    <CardTitle className="text-sm font-medium">{t("analytics.totalSubmissions")}</CardTitle>
                     <BarChart3 className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">{analytics.totalSubmissions}</div>
                     <p className="text-xs text-muted-foreground">
-                      All submissions received
+                      {t("analytics.allSubmissionsReceived")}
                     </p>
                   </CardContent>
                 </Card>
 
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Participants</CardTitle>
+                    <CardTitle className="text-sm font-medium">{t("analytics.participants")}</CardTitle>
                     <Users className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">{analytics.uniqueParticipants}</div>
                     <p className="text-xs text-muted-foreground">
-                      Unique participants
+                      {t("analytics.uniqueParticipants")}
                     </p>
                   </CardContent>
                 </Card>
 
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
+                    <CardTitle className="text-sm font-medium">{t("analytics.successRate")}</CardTitle>
                     <CheckCircle className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
@@ -159,14 +161,14 @@ export default function ChallengeAnalyticsPage() {
                         : 0}%
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {analytics.acceptedSubmissions} accepted
+                      {analytics.acceptedSubmissions} {t("analytics.accepted")}
                     </p>
                   </CardContent>
                 </Card>
 
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Average Score</CardTitle>
+                    <CardTitle className="text-sm font-medium">{t("analytics.averageScore")}</CardTitle>
                     <TrendingUp className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
@@ -174,7 +176,7 @@ export default function ChallengeAnalyticsPage() {
                       {analytics.averageScore ? Math.round(analytics.averageScore) : 0}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Out of {challenge?.points} points
+                      {t("analytics.outOf", { points: challenge?.points?.toString() || "0" })}
                     </p>
                   </CardContent>
                 </Card>
@@ -183,9 +185,9 @@ export default function ChallengeAnalyticsPage() {
               {/* Status Distribution */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Submission Status Distribution</CardTitle>
+                  <CardTitle>{t("analytics.statusDistribution")}</CardTitle>
                   <CardDescription>
-                    Breakdown of submission statuses
+                    {t("analytics.statusBreakdown")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -203,7 +205,7 @@ export default function ChallengeAnalyticsPage() {
                               item.status === "PENDING" ? "default" :
                               "destructive"
                             }>
-                              {item.status}
+                              {t(`submissions.status.${item.status.toLowerCase()}`)}
                             </Badge>
                           </div>
                           <div className="flex items-center gap-2">
@@ -229,31 +231,31 @@ export default function ChallengeAnalyticsPage() {
               <div className="grid md:grid-cols-2 gap-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Challenge Performance</CardTitle>
+                    <CardTitle>{t("analytics.challengePerformance")}</CardTitle>
                     <CardDescription>
-                      How participants are performing
+                      {t("analytics.howParticipantsPerforming")}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm">Success Rate:</span>
+                      <span className="text-sm">{t("analytics.successRate")}:</span>
                       <span className="font-medium">
                         {Math.round(analytics.difficultyMetrics.successRate)}%
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm">Average Attempts:</span>
+                      <span className="text-sm">{t("analytics.averageAttempts")}:</span>
                       <span className="font-medium">
                         {analytics.difficultyMetrics.averageAttempts.toFixed(1)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm">Difficulty Rating:</span>
+                      <span className="text-sm">{t("analytics.difficultyRating")}:</span>
                       <Badge variant={
                         challenge?.difficulty === "EASY" ? "secondary" :
                         challenge?.difficulty === "MEDIUM" ? "default" : "destructive"
                       }>
-                        {challenge?.difficulty}
+                        {challenge?.difficulty ? t(`challenges.difficulty.${challenge.difficulty.toLowerCase()}`) : ""}
                       </Badge>
                     </div>
                   </CardContent>
@@ -261,9 +263,9 @@ export default function ChallengeAnalyticsPage() {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Recent Activity</CardTitle>
+                    <CardTitle>{t("analytics.recentActivity")}</CardTitle>
                     <CardDescription>
-                      Submission activity over time
+                      {t("analytics.submissionActivityOverTime")}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -289,7 +291,7 @@ export default function ChallengeAnalyticsPage() {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground">No submission activity yet</p>
+                      <p className="text-sm text-muted-foreground">{t("analytics.noActivityYet")}</p>
                     )}
                   </CardContent>
                 </Card>
@@ -300,9 +302,9 @@ export default function ChallengeAnalyticsPage() {
               <CardContent className="p-8">
                 <div className="text-center">
                   <Clock className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-lg font-semibold mb-2">No Analytics Available</h3>
+                  <h3 className="text-lg font-semibold mb-2">{t("analytics.noAnalyticsAvailable")}</h3>
                   <p className="text-muted-foreground">
-                    Analytics data will be available once participants start submitting solutions.
+                    {t("analytics.analyticsAvailableOnceSubmissions")}
                   </p>
                 </div>
               </CardContent>

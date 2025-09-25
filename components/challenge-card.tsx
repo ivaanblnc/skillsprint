@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Trophy, Clock, Users, Target, Calendar, CheckCircle, AlertCircle, Clock as ClockIcon } from "lucide-react"
 import Link from "next/link"
+import { useTranslations } from "@/lib/i18n"
 
 interface Challenge {
   id: string
@@ -35,6 +36,7 @@ interface ChallengeCardProps {
 }
 
 export function ChallengeCard({ challenge }: ChallengeCardProps) {
+  const t = useTranslations()
   const [submission, setSubmission] = useState<Submission | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -65,13 +67,13 @@ export function ChallengeCard({ challenge }: ChallengeCardProps) {
     if (!submission) return null
 
     const statusConfig = {
-      ACCEPTED: { icon: CheckCircle, variant: "secondary" as const, text: "Accepted", color: "text-green-600" },
-      REJECTED: { icon: AlertCircle, variant: "destructive" as const, text: "Rejected", color: "text-red-600" },
-      PENDING: { icon: ClockIcon, variant: "default" as const, text: "Pending Review", color: "text-yellow-600" },
-      WRONG_ANSWER: { icon: AlertCircle, variant: "destructive" as const, text: "Wrong Answer", color: "text-red-600" },
-      RUNTIME_ERROR: { icon: AlertCircle, variant: "destructive" as const, text: "Runtime Error", color: "text-red-600" },
-      COMPILATION_ERROR: { icon: AlertCircle, variant: "destructive" as const, text: "Compilation Error", color: "text-red-600" },
-      TIME_LIMIT_EXCEEDED: { icon: AlertCircle, variant: "destructive" as const, text: "Time Limit Exceeded", color: "text-red-600" },
+      ACCEPTED: { icon: CheckCircle, variant: "secondary" as const, text: t("submissions.status.accepted"), color: "text-green-600" },
+      REJECTED: { icon: AlertCircle, variant: "destructive" as const, text: t("submissions.status.rejected"), color: "text-red-600" },
+      PENDING: { icon: ClockIcon, variant: "default" as const, text: t("submissions.status.pending"), color: "text-yellow-600" },
+      WRONG_ANSWER: { icon: AlertCircle, variant: "destructive" as const, text: t("submissions.status.wrongAnswer"), color: "text-red-600" },
+      RUNTIME_ERROR: { icon: AlertCircle, variant: "destructive" as const, text: t("submissions.status.runtimeError"), color: "text-red-600" },
+      COMPILATION_ERROR: { icon: AlertCircle, variant: "destructive" as const, text: t("submissions.status.compilationError"), color: "text-red-600" },
+      TIME_LIMIT_EXCEEDED: { icon: AlertCircle, variant: "destructive" as const, text: t("submissions.status.timeLimitExceeded"), color: "text-red-600" },
     }
 
     const config = statusConfig[submission.status as keyof typeof statusConfig]
@@ -110,11 +112,11 @@ export function ChallengeCard({ challenge }: ChallengeCardProps) {
                       : "destructive"
                 }
               >
-                {challenge.difficulty}
+                {t(`challenges.difficulty.${challenge.difficulty.toLowerCase()}`)}
               </Badge>
               <Badge variant="outline" className="text-xs">
                 <Trophy className="h-3 w-3 mr-1" />
-                {challenge.points} pts
+                {challenge.points} {t("challenges.details.points")}
               </Badge>
             </div>
           </div>
@@ -129,22 +131,22 @@ export function ChallengeCard({ challenge }: ChallengeCardProps) {
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <span className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
-              {challenge.timeLimit} min
+              {challenge.timeLimit} {t("challenges.details.minutes")}
             </span>
             <span className="flex items-center gap-1">
               <Users className="h-3 w-3" />
-              {challenge._count.submissions} submissions
+              {challenge._count.submissions} {t("challenges.details.submissions")}
             </span>
             <span className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
-              {timeRemaining}d left
+              {t("challenges.details.daysLeft", { days: timeRemaining.toString() })}
             </span>
           </div>
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="text-xs text-muted-foreground">
-                by {challenge.creator?.name || "Anonymous"}
+                {t("challenges.details.createdBy")} {challenge.creator?.name || t("common.anonymous")}
               </div>
             </div>
             
@@ -152,7 +154,7 @@ export function ChallengeCard({ challenge }: ChallengeCardProps) {
               <div className="flex gap-2">
                 <Link href={`/challenges/${challenge.id}`}>
                   <Button size="sm" variant="outline">
-                    View Details
+                    {t("challenges.details.viewDetails")}
                   </Button>
                 </Link>
                 {/* Solo mostrar botones de acción según el estado de la submission */}
@@ -163,7 +165,7 @@ export function ChallengeCard({ challenge }: ChallengeCardProps) {
                   submission.status === "TIME_LIMIT_EXCEEDED")) && (
                   <Link href={`/challenges/${challenge.id}/submit`}>
                     <Button size="sm" variant="secondary">
-                      {(submission as any).isDraft ? "Continue Draft" : "Improve Solution"}
+                      {(submission as any).isDraft ? t("challenges.details.continueDraft") : t("challenges.details.improveSolution")}
                     </Button>
                   </Link>
                 )}
@@ -171,13 +173,13 @@ export function ChallengeCard({ challenge }: ChallengeCardProps) {
                 {submission.status === "ACCEPTED" && (
                   <Button size="sm" variant="secondary" disabled>
                     <CheckCircle className="h-3 w-3 mr-1" />
-                    Completed
+                    {t("challenges.details.completed")}
                   </Button>
                 )}
                 {/* Para submissions pendientes o rechazadas, solo mostrar el estado */}
                 {(submission.status === "PENDING" || submission.status === "REJECTED") && (
                   <span className="text-xs text-muted-foreground px-2 py-1">
-                    See details for status
+                    {t("challenges.seeDetailsForStatus")}
                   </span>
                 )}
               </div>
@@ -185,7 +187,7 @@ export function ChallengeCard({ challenge }: ChallengeCardProps) {
               <Link href={`/challenges/${challenge.id}`}>
                 <Button size="sm">
                   <Target className="h-3 w-3 mr-1" />
-                  Start Challenge
+                  {t("challenges.details.startChallenge")}
                 </Button>
               </Link>
             )}

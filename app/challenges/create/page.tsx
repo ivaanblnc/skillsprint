@@ -16,6 +16,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
+import { useTranslations } from "@/lib/i18n"
 
 interface TestCase {
   input: string
@@ -25,6 +26,7 @@ interface TestCase {
 
 export default function CreateChallengePage() {
   const router = useRouter()
+  const t = useTranslations()
   const [loading, setLoading] = useState(false)
   const [previewMode, setPreviewMode] = useState(false)
   
@@ -70,39 +72,39 @@ export default function CreateChallengePage() {
 
   const validateForm = () => {
     if (!formData.title.trim()) {
-      toast.error("Please enter a challenge title")
+      toast.error(t("create.validationError"))
       return false
     }
     
     if (!formData.description.trim()) {
-      toast.error("Please enter a challenge description")
+      toast.error(t("create.validationError"))
       return false
     }
     
     if (!formData.difficulty) {
-      toast.error("Please select a difficulty level")
+      toast.error(t("create.validationError"))
       return false
     }
     
     if (formData.points <= 0) {
-      toast.error("Points must be greater than 0")
+      toast.error(t("create.validationError"))
       return false
     }
     
     if (formData.timeLimit <= 0) {
-      toast.error("Time limit must be greater than 0")
+      toast.error(t("create.validationError"))
       return false
     }
     
     if (formData.endDate <= formData.startDate) {
-      toast.error("End date must be after start date")
+      toast.error(t("create.validationError"))
       return false
     }
     
     // Validate test cases
     const validTestCases = testCases.filter(tc => tc.input.trim() && tc.expectedOutput.trim())
     if (validTestCases.length === 0) {
-      toast.error("Please add at least one test case with input and expected output")
+      toast.error(t("create.mustHaveOneTestCase"))
       return false
     }
     
@@ -138,12 +140,12 @@ export default function CreateChallengePage() {
       
       const result = await response.json()
       
-      toast.success(`Challenge ${status === "DRAFT" ? "saved as draft" : "published"} successfully!`)
+      toast.success(t("create.createSuccess"))
       router.push(`/challenges/manage`)
       
     } catch (error) {
       console.error("Error creating challenge:", error)
-      toast.error(error instanceof Error ? error.message : "Failed to create challenge")
+      toast.error(error instanceof Error ? error.message : t("create.createError"))
     } finally {
       setLoading(false)
     }
@@ -156,10 +158,10 @@ export default function CreateChallengePage() {
         <main className="container mx-auto px-4 py-8">
           <div className="max-w-4xl mx-auto">
             <div className="flex items-center justify-between mb-6">
-              <h1 className="text-3xl font-bold">Challenge Preview</h1>
+              <h1 className="text-3xl font-bold">{t("create.preview")}</h1>
               <Button onClick={() => setPreviewMode(false)} variant="outline">
                 <Save className="h-4 w-4 mr-2" />
-                Back to Edit
+                {t("create.editMode")}
               </Button>
             </div>
             
@@ -167,16 +169,16 @@ export default function CreateChallengePage() {
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div>
-                    <CardTitle className="text-2xl mb-2">{formData.title || "Untitled Challenge"}</CardTitle>
+                    <CardTitle className="text-2xl mb-2">{formData.title || t("create.challengeTitle")}</CardTitle>
                     <div className="flex items-center gap-2 mb-4">
                       <Badge variant={
                         formData.difficulty === "EASY" ? "secondary" :
                         formData.difficulty === "MEDIUM" ? "default" : "destructive"
                       }>
-                        {formData.difficulty || "No difficulty"}
+                        {formData.difficulty ? t(`challenges.difficulty.${formData.difficulty.toLowerCase()}`) : t("create.selectDifficulty")}
                       </Badge>
-                      <Badge variant="outline">{formData.points} points</Badge>
-                      <Badge variant="outline">{formData.timeLimit} minutes</Badge>
+                      <Badge variant="outline">{formData.points} {t("create.points")}</Badge>
+                      <Badge variant="outline">{formData.timeLimit} {t("create.minutes")}</Badge>
                     </div>
                   </div>
                 </div>
@@ -184,33 +186,33 @@ export default function CreateChallengePage() {
               <CardContent>
                 <div className="space-y-6">
                   <div>
-                    <h3 className="font-semibold mb-2">Description</h3>
+                    <h3 className="font-semibold mb-2">{t("create.description")}</h3>
                     <p className="text-muted-foreground whitespace-pre-wrap">
-                      {formData.description || "No description provided"}
+                      {formData.description || t("create.descriptionPlaceholder")}
                     </p>
                   </div>
                   
                   {testCases.filter(tc => tc.input.trim() && tc.expectedOutput.trim()).length > 0 && (
                     <div>
-                      <h3 className="font-semibold mb-4">Test Cases</h3>
+                      <h3 className="font-semibold mb-4">{t("create.testCasesTitle")}</h3>
                       <div className="space-y-4">
                         {testCases
                           .filter(tc => tc.input.trim() && tc.expectedOutput.trim())
                           .map((testCase, index) => (
                             <div key={index} className="border rounded-lg p-4">
                               <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm font-medium">Test Case {index + 1}</span>
-                                {testCase.isPublic && <Badge variant="secondary">Public</Badge>}
+                                <span className="text-sm font-medium">{t("create.testCase")} {index + 1}</span>
+                                {testCase.isPublic && <Badge variant="secondary">{t("create.public")}</Badge>}
                               </div>
                               <div className="grid md:grid-cols-2 gap-4">
                                 <div>
-                                  <Label className="text-xs">Input:</Label>
+                                  <Label className="text-xs">{t("create.input")}:</Label>
                                   <pre className="bg-muted p-3 rounded text-sm mt-1">
                                     <code>{testCase.input}</code>
                                   </pre>
                                 </div>
                                 <div>
-                                  <Label className="text-xs">Expected Output:</Label>
+                                  <Label className="text-xs">{t("create.expectedOutput")}:</Label>
                                   <pre className="bg-muted p-3 rounded text-sm mt-1">
                                     <code>{testCase.expectedOutput}</code>
                                   </pre>
@@ -237,12 +239,12 @@ export default function CreateChallengePage() {
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-3xl font-bold mb-2">Create New Challenge</h1>
-              <p className="text-muted-foreground">Design a coding challenge for participants to solve</p>
+              <h1 className="text-3xl font-bold mb-2">{t("create.newChallenge")}</h1>
+              <p className="text-muted-foreground">{t("create.challengeDetails")}</p>
             </div>
             <Button onClick={() => setPreviewMode(true)} variant="outline">
               <Eye className="h-4 w-4 mr-2" />
-              Preview
+              {t("create.preview")}
             </Button>
           </div>
 
@@ -252,25 +254,25 @@ export default function CreateChallengePage() {
               {/* Basic Information */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Basic Information</CardTitle>
-                  <CardDescription>Enter the basic details of your challenge</CardDescription>
+                  <CardTitle>{t("create.challengeDetails")}</CardTitle>
+                  <CardDescription>{t("create.challengeDetailsDescription")}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="title">Challenge Title</Label>
+                    <Label htmlFor="title">{t("create.challengeTitle")}</Label>
                     <Input
                       id="title"
-                      placeholder="e.g., Two Sum Problem"
+                      placeholder={t("create.challengeTitlePlaceholder")}
                       value={formData.title}
                       onChange={(e) => handleInputChange("title", e.target.value)}
                     />
                   </div>
                   
                   <div>
-                    <Label htmlFor="description">Description</Label>
+                    <Label htmlFor="description">{t("create.description")}</Label>
                     <Textarea
                       id="description"
-                      placeholder="Describe the problem, constraints, and requirements..."
+                      placeholder={t("create.descriptionPlaceholder")}
                       rows={8}
                       value={formData.description}
                       onChange={(e) => handleInputChange("description", e.target.value)}
@@ -279,21 +281,21 @@ export default function CreateChallengePage() {
                   
                   <div className="grid md:grid-cols-3 gap-4">
                     <div>
-                      <Label htmlFor="difficulty">Difficulty</Label>
+                      <Label htmlFor="difficulty">{t("create.difficulty")}</Label>
                       <Select value={formData.difficulty} onValueChange={(value) => handleInputChange("difficulty", value)}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select difficulty" />
+                          <SelectValue placeholder={t("create.selectDifficulty")} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="EASY">Easy</SelectItem>
-                          <SelectItem value="MEDIUM">Medium</SelectItem>
-                          <SelectItem value="HARD">Hard</SelectItem>
+                          <SelectItem value="EASY">{t("challenges.difficulty.easy")}</SelectItem>
+                          <SelectItem value="MEDIUM">{t("challenges.difficulty.medium")}</SelectItem>
+                          <SelectItem value="HARD">{t("challenges.difficulty.hard")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     
                     <div>
-                      <Label htmlFor="points">Points</Label>
+                      <Label htmlFor="points">{t("create.points")}</Label>
                       <Input
                         id="points"
                         type="number"
@@ -304,7 +306,7 @@ export default function CreateChallengePage() {
                     </div>
                     
                     <div>
-                      <Label htmlFor="timeLimit">Time Limit (minutes)</Label>
+                      <Label htmlFor="timeLimit">{t("create.timeLimit")}</Label>
                       <Input
                         id="timeLimit"
                         type="number"
@@ -322,12 +324,12 @@ export default function CreateChallengePage() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle>Test Cases</CardTitle>
-                      <CardDescription>Define input/output examples for your challenge</CardDescription>
+                      <CardTitle>{t("create.testCasesTitle")}</CardTitle>
+                      <CardDescription>{t("create.testCasesDescription")}</CardDescription>
                     </div>
                     <Button onClick={addTestCase} size="sm">
                       <Plus className="h-4 w-4 mr-2" />
-                      Add Test Case
+                      {t("create.addTestCase")}
                     </Button>
                   </div>
                 </CardHeader>
@@ -335,7 +337,7 @@ export default function CreateChallengePage() {
                   {testCases.map((testCase, index) => (
                     <div key={index} className="border rounded-lg p-4">
                       <div className="flex items-center justify-between mb-3">
-                        <span className="font-medium">Test Case {index + 1}</span>
+                        <span className="font-medium">{t("create.testCase")} {index + 1}</span>
                         <div className="flex items-center gap-2">
                           <Label className="text-xs flex items-center gap-2">
                             <input
@@ -344,7 +346,7 @@ export default function CreateChallengePage() {
                               onChange={(e) => updateTestCase(index, "isPublic", e.target.checked)}
                               className="rounded"
                             />
-                            Public (visible to participants)
+                            {t("create.publicDescription")}
                           </Label>
                           {testCases.length > 1 && (
                             <Button
@@ -352,6 +354,7 @@ export default function CreateChallengePage() {
                               size="sm"
                               variant="ghost"
                               className="text-destructive hover:text-destructive"
+                              title={t("create.removeTestCase")}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -361,18 +364,18 @@ export default function CreateChallengePage() {
                       
                       <div className="grid md:grid-cols-2 gap-4">
                         <div>
-                          <Label className="text-sm">Input</Label>
+                          <Label className="text-sm">{t("create.input")}</Label>
                           <Textarea
-                            placeholder="Enter test input..."
+                            placeholder={t("create.inputPlaceholder")}
                             rows={3}
                             value={testCase.input}
                             onChange={(e) => updateTestCase(index, "input", e.target.value)}
                           />
                         </div>
                         <div>
-                          <Label className="text-sm">Expected Output</Label>
+                          <Label className="text-sm">{t("create.expectedOutput")}</Label>
                           <Textarea
-                            placeholder="Enter expected output..."
+                            placeholder={t("create.outputPlaceholder")}
                             rows={3}
                             value={testCase.expectedOutput}
                             onChange={(e) => updateTestCase(index, "expectedOutput", e.target.value)}
@@ -390,12 +393,12 @@ export default function CreateChallengePage() {
               {/* Schedule */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Schedule</CardTitle>
-                  <CardDescription>Set when your challenge will be available</CardDescription>
+                  <CardTitle>{t("create.schedule")}</CardTitle>
+                  <CardDescription>{t("create.scheduleDescription")}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label>Start Date</Label>
+                    <Label>{t("create.startDate")}</Label>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
@@ -406,7 +409,7 @@ export default function CreateChallengePage() {
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {formData.startDate ? format(formData.startDate, "PPP") : "Pick a date"}
+                          {formData.startDate ? format(formData.startDate, "PPP") : t("create.selectDate")}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0">
@@ -421,7 +424,7 @@ export default function CreateChallengePage() {
                   </div>
                   
                   <div>
-                    <Label>End Date</Label>
+                    <Label>{t("create.endDate")}</Label>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
@@ -432,7 +435,7 @@ export default function CreateChallengePage() {
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {formData.endDate ? format(formData.endDate, "PPP") : "Pick a date"}
+                          {formData.endDate ? format(formData.endDate, "PPP") : t("create.selectDate")}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0">
@@ -451,7 +454,7 @@ export default function CreateChallengePage() {
               {/* Actions */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Publish Options</CardTitle>
+                  <CardTitle>{t("create.publish")}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <Button
@@ -460,7 +463,7 @@ export default function CreateChallengePage() {
                     variant="outline"
                     className="w-full"
                   >
-                    {loading ? "Saving..." : "Save as Draft"}
+                    {loading ? t("common.loading") : t("create.save")}
                   </Button>
                   
                   <Button
@@ -468,7 +471,7 @@ export default function CreateChallengePage() {
                     disabled={loading}
                     className="w-full"
                   >
-                    {loading ? "Publishing..." : "Publish Challenge"}
+                    {loading ? t("common.loading") : t("create.publish")}
                   </Button>
                 </CardContent>
               </Card>

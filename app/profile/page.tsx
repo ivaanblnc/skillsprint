@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Trophy, Mail, User, Calendar, Target, Code2, ArrowLeft, Edit, Save, X, Loader2, CheckCircle, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { DashboardNav } from "@/components/dashboard-nav"
+import { useTranslations } from "@/lib/i18n"
 
 interface UserProfile {
   id: string
@@ -68,6 +69,7 @@ function getRoleIcon(role: string) {
 
 export default function ProfilePage() {
   const router = useRouter()
+  const t = useTranslations()
   const [user, setUser] = useState<UserProfile | null>(null)
   const [authUser, setAuthUser] = useState<any>(null)
   const [stats, setStats] = useState<UserStats | null>(null)
@@ -150,12 +152,12 @@ export default function ProfilePage() {
 
   const handleSave = async () => {
     if (!editForm.name.trim() || !editForm.email.trim()) {
-      setError("Name and email are required")
+      setError(t("profile.updateError"))
       return
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editForm.email)) {
-      setError("Please enter a valid email address")
+      setError(t("profile.updateError"))
       return
     }
 
@@ -178,19 +180,19 @@ export default function ProfilePage() {
         setIsEditing(false)
         
         if (data.needsEmailVerification) {
-          setSuccess("Profile updated successfully! Please check your email to verify your new email address.")
+          setSuccess(t("profile.updateSuccess"))
         } else {
-          setSuccess("Profile updated successfully!")
+          setSuccess(t("profile.updateSuccess"))
         }
         
         // Clear success message after 5 seconds
         setTimeout(() => setSuccess(""), 5000)
       } else {
-        setError(data.error || "Failed to update profile")
+        setError(data.error || t("profile.updateError"))
       }
     } catch (error) {
       console.error('Error updating profile:', error)
-      setError("An unexpected error occurred")
+      setError(t("profile.updateError"))
     } finally {
       setSaving(false)
     }
@@ -225,10 +227,10 @@ export default function ProfilePage() {
             <div className="mb-8">
               <Link href="/dashboard" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-4">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Dashboard
+                {t("profile.backToDashboard")}
               </Link>
-              <h1 className="text-3xl font-bold mb-2">Profile</h1>
-              <p className="text-muted-foreground">Manage your account settings and view your statistics</p>
+              <h1 className="text-3xl font-bold mb-2">{t("profile.title")}</h1>
+              <p className="text-muted-foreground">{t("profile.personalInfo")}</p>
             </div>
 
             <div className="grid lg:grid-cols-3 gap-8">
@@ -240,18 +242,18 @@ export default function ProfilePage() {
                     <div className="flex items-center justify-between">
                       <CardTitle className="flex items-center gap-2">
                         <User className="h-5 w-5 text-primary" />
-                        Personal Information
+                        {t("profile.personalInfo")}
                       </CardTitle>
                       {!isEditing ? (
                         <Button variant="outline" size="sm" onClick={handleEdit}>
                           <Edit className="h-4 w-4 mr-2" />
-                          Edit
+                          {t("profile.editProfile")}
                         </Button>
                       ) : (
                         <div className="flex gap-2">
                           <Button variant="outline" size="sm" onClick={handleCancel} disabled={saving}>
                             <X className="h-4 w-4 mr-2" />
-                            Cancel
+                            {t("profile.cancel")}
                           </Button>
                           <Button size="sm" onClick={handleSave} disabled={saving}>
                             {saving ? (
@@ -259,7 +261,7 @@ export default function ProfilePage() {
                             ) : (
                               <Save className="h-4 w-4 mr-2" />
                             )}
-                            Save
+                            {t("profile.saveChanges")}
                           </Button>
                         </div>
                       )}
@@ -292,16 +294,16 @@ export default function ProfilePage() {
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
-                        <h3 className="text-xl font-semibold">{user.name || "No name set"}</h3>
+                        <h3 className="text-xl font-semibold">{user.name || t("profile.name")}</h3>
                         <p className="text-muted-foreground">{user.email}</p>
                         <div className="flex items-center gap-2 mt-2">
                           <Badge variant={getRoleBadgeVariant(user.role)} className="flex items-center gap-1">
                             {getRoleIcon(user.role)}
-                            {user.role.toLowerCase()}
+                            {t(`profile.roles.${user.role.toLowerCase()}`)}
                           </Badge>
                           <Badge variant="outline" className="flex items-center gap-1">
                             <Trophy className="h-3 w-3" />
-                            {user.points} points
+                            {user.points} {t("profile.totalPoints")}
                           </Badge>
                         </div>
                       </div>
@@ -309,18 +311,18 @@ export default function ProfilePage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="name">Full Name</Label>
+                        <Label htmlFor="name">{t("profile.name")}</Label>
                         <Input 
                           id="name" 
                           value={isEditing ? editForm.name : (user.name || "")}
                           onChange={(e) => isEditing && setEditForm(prev => ({ ...prev, name: e.target.value }))}
                           disabled={!isEditing}
                           className={!isEditing ? "bg-muted" : ""}
-                          placeholder="Enter your full name"
+                          placeholder={t("profile.name")}
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
+                        <Label htmlFor="email">{t("profile.email")}</Label>
                         <Input 
                           id="email" 
                           type="email"
@@ -328,20 +330,20 @@ export default function ProfilePage() {
                           onChange={(e) => isEditing && setEditForm(prev => ({ ...prev, email: e.target.value }))}
                           disabled={!isEditing}
                           className={!isEditing ? "bg-muted" : ""}
-                          placeholder="Enter your email address"
+                          placeholder={t("profile.email")}
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="role">Role</Label>
+                        <Label htmlFor="role">{t("profile.role")}</Label>
                         <Input 
                           id="role" 
-                          value={user.role} 
+                          value={t(`profile.roles.${user.role.toLowerCase()}`)} 
                           disabled 
                           className="bg-muted capitalize"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="joined">Member Since</Label>
+                        <Label htmlFor="joined">{t("profile.memberSince")}</Label>
                         <Input 
                           id="joined" 
                           value={new Date(user.createdAt).toLocaleDateString()}
@@ -358,9 +360,9 @@ export default function ProfilePage() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Calendar className="h-5 w-5 text-primary" />
-                      Recent Activity
+                      {t("profile.activity.title")}
                     </CardTitle>
-                    <CardDescription>Your latest submissions and achievements</CardDescription>
+                    <CardDescription>{t("profile.activity.title")}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
@@ -386,8 +388,8 @@ export default function ProfilePage() {
                         ))
                       ) : (
                         <div className="text-center py-8">
-                          <p className="text-muted-foreground">No recent activity</p>
-                          <p className="text-sm text-muted-foreground mt-2">Start participating in challenges to see your activity here!</p>
+                          <p className="text-muted-foreground">{t("profile.activity.noActivity")}</p>
+                          <p className="text-sm text-muted-foreground mt-2">{t("profile.activity.noActivity")}</p>
                         </div>
                       )}
                     </div>
@@ -402,38 +404,38 @@ export default function ProfilePage() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Trophy className="h-5 w-5 text-primary" />
-                      Statistics
+                      {t("profile.stats.title")}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-3">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">Total Points</span>
+                        <span className="text-sm text-muted-foreground">{t("profile.totalPoints")}</span>
                         <span className="font-semibold">{user.points}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">Challenges Attempted</span>
+                        <span className="text-sm text-muted-foreground">{t("profile.stats.challengesAttempted")}</span>
                         <span className="font-semibold">{stats?.totalChallengesAttempted || 0}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">Challenges Completed</span>
+                        <span className="text-sm text-muted-foreground">{t("profile.stats.challengesCompleted")}</span>
                         <span className="font-semibold">{stats?.totalChallengesCompleted || 0}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">Total Submissions</span>
+                        <span className="text-sm text-muted-foreground">{t("profile.stats.totalSubmissions")}</span>
                         <span className="font-semibold">{stats?.totalSubmissions || 0}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">Success Rate</span>
+                        <span className="text-sm text-muted-foreground">{t("profile.stats.successRate")}</span>
                         <span className="font-semibold">{successRate}%</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">Average Score</span>
+                        <span className="text-sm text-muted-foreground">{t("profile.stats.averageScore")}</span>
                         <span className="font-semibold">{stats?.averageScore || 0}/100</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">Global Rank</span>
-                        <span className="font-semibold">#{stats?.rank || 0} of {stats?.totalUsers || 0}</span>
+                        <span className="text-sm text-muted-foreground">{t("profile.rank")}</span>
+                        <span className="font-semibold">#{stats?.rank || 0} {t("profile.outOf")} {stats?.totalUsers || 0} {t("profile.users")}</span>
                       </div>
                     </div>
                   </CardContent>
@@ -442,22 +444,22 @@ export default function ProfilePage() {
                 {/* Quick Actions */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Quick Actions</CardTitle>
+                    <CardTitle>{t("nav.dashboard")}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <Link href="/challenges" className="block">
                       <Button variant="outline" className="w-full justify-start">
-                        <Code2 className="mr-2 h-4 w-4" /> Browse Challenges
+                        <Code2 className="mr-2 h-4 w-4" /> {t("nav.challenges")}
                       </Button>
                     </Link>
                     <Link href="/leaderboard" className="block">
                       <Button variant="outline" className="w-full justify-start">
-                        <Trophy className="mr-2 h-4 w-4" /> View Leaderboard
+                        <Trophy className="mr-2 h-4 w-4" /> {t("nav.leaderboard")}
                       </Button>
                     </Link>
                     <Link href="/dashboard" className="block">
                       <Button variant="outline" className="w-full justify-start">
-                        <Target className="mr-2 h-4 w-4" /> Dashboard
+                        <Target className="mr-2 h-4 w-4" /> {t("nav.dashboard")}
                       </Button>
                     </Link>
                   </CardContent>

@@ -5,8 +5,10 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Search, X } from "lucide-react"
+import { useTranslations } from "@/lib/i18n"
 
 export function ChallengeFilters() {
+  const t = useTranslations()
   const [searchTerm, setSearchTerm] = useState("")
   const [difficulty, setDifficulty] = useState("all")
   const [sortBy, setSortBy] = useState("newest")
@@ -36,9 +38,9 @@ export function ChallengeFilters() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Levels</SelectItem>
-            <SelectItem value="EASY">Easy</SelectItem>
-            <SelectItem value="MEDIUM">Medium</SelectItem>
-            <SelectItem value="HARD">Hard</SelectItem>
+            <SelectItem value="EASY">{t("challenges.difficulty.easy")}</SelectItem>
+            <SelectItem value="MEDIUM">{t("challenges.difficulty.medium")}</SelectItem>
+            <SelectItem value="HARD">{t("challenges.difficulty.hard")}</SelectItem>
           </SelectContent>
         </Select>
 

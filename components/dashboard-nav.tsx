@@ -15,9 +15,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Code2, Trophy, Target, LogOut, Settings, Menu, X, Gavel, Plus, FolderOpen } from "lucide-react"
+import { LanguageSwitcher } from "@/components/language-switcher"
+import { useTranslations } from "@/lib/i18n"
 
 export function DashboardNav() {
   const router = useRouter()
+  const t = useTranslations()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [user, setUser] = useState<any>(null)
   const [userInfo, setUserInfo] = useState<{name: string | null, email: string | null, role: string | null} | null>(null)
@@ -26,16 +29,16 @@ export function DashboardNav() {
   // Dynamic navigation based on user role
   const getNavigation = () => {
     const baseNavigation = [
-      { name: "Dashboard", href: "/dashboard", icon: Target },
-      { name: "Challenges", href: "/challenges", icon: Code2 },
-      { name: "Leaderboard", href: "/leaderboard", icon: Trophy },
+      { name: t("nav.dashboard"), href: "/dashboard", icon: Target },
+      { name: t("nav.challenges"), href: "/challenges", icon: Code2 },
+      { name: t("nav.leaderboard"), href: "/leaderboard", icon: Trophy },
     ]
     
     // Add creator-specific navigation if user is a creator
     if (userInfo?.role === 'CREATOR') {
       baseNavigation.splice(2, 0, 
-        { name: "Create Challenge", href: "/challenges/create", icon: Plus },
-        { name: "My Challenges", href: "/challenges/manage", icon: FolderOpen }
+        { name: t("nav.createChallenge"), href: "/challenges/create", icon: Plus },
+        { name: t("nav.myChallenges"), href: "/challenges/manage", icon: FolderOpen }
       )
     }
     
@@ -136,7 +139,10 @@ export function DashboardNav() {
           </div>
 
           {/* User Menu */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            {/* Language Switcher */}
+            <LanguageSwitcher />
+
             {/* Mobile Menu Button */}
             <Button
               variant="ghost"
@@ -172,29 +178,21 @@ export function DashboardNav() {
                 <DropdownMenuItem asChild>
                   <Link href="/dashboard" className="flex items-center">
                     <Target className="mr-2 h-4 w-4" />
-                    Dashboard
+                    {t("nav.dashboard")}
                   </Link>
                 </DropdownMenuItem>
-                {userInfo?.role === 'JUDGE' && (
-                  <DropdownMenuItem asChild>
-                    <Link href="/judge/challenges" className="flex items-center">
-                      <Gavel className="mr-2 h-4 w-4" />
-                      Judge Panel
-                    </Link>
-                  </DropdownMenuItem>
-                )}
                 {userInfo?.role === 'CREATOR' && (
                   <>
                     <DropdownMenuItem asChild>
                       <Link href="/challenges/create" className="flex items-center">
                         <Plus className="mr-2 h-4 w-4" />
-                        Create Challenge
+                        {t("nav.createChallenge")}
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link href="/challenges/manage" className="flex items-center">
                         <FolderOpen className="mr-2 h-4 w-4" />
-                        My Challenges
+                        {t("nav.myChallenges")}
                       </Link>
                     </DropdownMenuItem>
                   </>
@@ -202,7 +200,7 @@ export function DashboardNav() {
                 <DropdownMenuItem asChild>
                   <Link href="/profile" className="flex items-center">
                     <Settings className="mr-2 h-4 w-4" />
-                    Profile
+                    {t("nav.profile")}
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -215,7 +213,7 @@ export function DashboardNav() {
                   }}
                 >
                   <LogOut className="mr-2 h-4 w-4" />
-                  Sign Out
+                  {t("nav.signOut")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

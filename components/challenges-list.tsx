@@ -6,6 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button"
 import { Search, X, Code2 } from "lucide-react"
 import { ChallengeCard } from "./challenge-card"
+import { useTranslations } from "@/lib/i18n"
+
 
 interface Challenge {
   id: string
@@ -28,6 +30,7 @@ interface ChallengesListProps {
 }
 
 export function ChallengesList({ initialChallenges }: ChallengesListProps) {
+  const t = useTranslations()
   const [searchTerm, setSearchTerm] = useState("")
   const [difficulty, setDifficulty] = useState("all")
   const [sortBy, setSortBy] = useState("newest")
@@ -84,7 +87,7 @@ export function ChallengesList({ initialChallenges }: ChallengesListProps) {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search challenges..."
+              placeholder={t("challenges.filters.search")}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -96,23 +99,23 @@ export function ChallengesList({ initialChallenges }: ChallengesListProps) {
               <SelectValue placeholder="Difficulty" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Levels</SelectItem>
-              <SelectItem value="EASY">Easy</SelectItem>
-              <SelectItem value="MEDIUM">Medium</SelectItem>
-              <SelectItem value="HARD">Hard</SelectItem>
+              <SelectItem value="all">{t("challenges.filters.all")}</SelectItem>
+              <SelectItem value="EASY">{t("challenges.difficulty.easy")}</SelectItem>
+              <SelectItem value="MEDIUM">{t("challenges.difficulty.medium")}</SelectItem>
+              <SelectItem value="HARD">{t("challenges.difficulty.hard")}</SelectItem>
             </SelectContent>
           </Select>
 
           <Select value={sortBy} onValueChange={setSortBy}>
             <SelectTrigger className="w-full md:w-40">
-              <SelectValue placeholder="Sort by" />
+              <SelectValue placeholder={t("common.filter")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="newest">Newest</SelectItem>
-              <SelectItem value="oldest">Oldest</SelectItem>
-              <SelectItem value="points-high">Most Points</SelectItem>
-              <SelectItem value="points-low">Least Points</SelectItem>
-              <SelectItem value="popular">Most Popular</SelectItem>
+              <SelectItem value="newest">{t("challenges.filters.newest")}</SelectItem>
+              <SelectItem value="oldest">{t("challenges.filters.oldest")}</SelectItem>
+              <SelectItem value="points-high">{t("challenges.filters.mostPoints")}</SelectItem>
+              <SelectItem value="points-low">{t("challenges.filters.leastPoints")}</SelectItem>
+              <SelectItem value="popular">{t("challenges.filters.mostPopular")}</SelectItem>
             </SelectContent>
           </Select>
 
@@ -127,7 +130,10 @@ export function ChallengesList({ initialChallenges }: ChallengesListProps) {
       {/* Results info */}
       <div className="mb-6">
         <p className="text-sm text-muted-foreground">
-          Showing {filteredAndSortedChallenges.length} of {initialChallenges.length} challenges
+          {t("challenges.details.showingChallenges", { 
+            count: filteredAndSortedChallenges.length.toString(), 
+            total: initialChallenges.length.toString() 
+          })}
         </p>
       </div>
 
@@ -142,16 +148,16 @@ export function ChallengesList({ initialChallenges }: ChallengesListProps) {
       {filteredAndSortedChallenges.length === 0 && (
         <div className="text-center py-12">
           <Code2 className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-          <h3 className="text-lg font-semibold mb-2">No challenges found</h3>
+          <h3 className="text-lg font-semibold mb-2">{t("challenges.noChallengesFound")}</h3>
           <p className="text-muted-foreground mb-4">
             {searchTerm || difficulty !== "all" 
-              ? "Try adjusting your filters or search terms" 
-              : "Check back later for new challenges!"
+              ? t("challenges.tryAdjustingFilters")
+              : t("challenges.checkBackLater")
             }
           </p>
           {(searchTerm || difficulty !== "all" || sortBy !== "newest") && (
             <Button variant="outline" onClick={clearFilters}>
-              Clear filters
+              {t("challenges.clearFilters")}
             </Button>
           )}
         </div>

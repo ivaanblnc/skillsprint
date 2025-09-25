@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label"
 import { Mail, Code2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { useTranslations } from "@/lib/i18n"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -18,6 +19,7 @@ export default function LoginPage() {
   const [isSignInMode, setIsSignInMode] = useState(true)
   const router = useRouter()
   const supabase = createClient()
+  const t = useTranslations()
 
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -39,7 +41,7 @@ export default function LoginPage() {
  },
     })
     if (error) setMessage(error.message)
-    else setMessage("Check your email for a sign-in link!")
+    else setMessage(t("auth.checkEmailForLink"))
     setIsLoading(false)
   }
 
@@ -53,43 +55,43 @@ export default function LoginPage() {
             </div>
           </div>
           <h1 className="text-3xl font-bold text-balance">Welcome to SkillSprint</h1>
-          <p className="text-muted-foreground mt-2 text-pretty">Sign in to start your coding journey</p>
+          <p className="text-muted-foreground mt-2 text-pretty">{t("auth.signInSubtitle")}</p>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Sign In</CardTitle>
-            <CardDescription>{isSignInMode ? "Enter your credentials" : "Get a magic link via email"}</CardDescription>
+            <CardTitle>{t("auth.signInTitle")}</CardTitle>
+            <CardDescription>{isSignInMode ? t("auth.signInToAccount") : t("auth.getMagicLinkEmail")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <form onSubmit={isSignInMode ? handleEmailSignIn : handleMagicLink} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t("auth.email")}</Label>
                 <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
               </div>
               {isSignInMode && (
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">{t("auth.password")}</Label>
                   <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
                 </div>
               )}
               <Button type="submit" disabled={isLoading} className="w-full">
                 <Mail className="mr-2 h-4 w-4" />
-                {isLoading ? (isSignInMode ? "Signing in..." : "Sending...") : isSignInMode ? "Sign In" : "Send Magic Link"}
+                {isLoading ? (isSignInMode ? t("auth.signingIn") : t("auth.sendingLink")) : isSignInMode ? t("auth.signIn") : t("auth.sendMagicLink")}
               </Button>
             </form>
 
             <div className="text-center">
               <Button variant="ghost" onClick={() => setIsSignInMode(!isSignInMode)} className="text-sm">
-                {isSignInMode ? "Use magic link instead" : "Use password instead"}
+                {isSignInMode ? t("auth.useMagicLink") : t("auth.usePassword")}
               </Button>
             </div>
 
-            {message && <div className={`text-sm text-center p-3 rounded-md ${message.includes("Check your email") ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive"}`}>{message}</div>}
+            {message && <div className={`text-sm text-center p-3 rounded-md ${message === t("auth.checkEmailForLink") ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive"}`}>{message}</div>}
 
             <div className="text-center text-sm">
-              <span className="text-muted-foreground">Don't have an account? </span>
-              <Link href="/auth/register" className="text-primary hover:underline">Sign up</Link>
+              <span className="text-muted-foreground">{t("auth.dontHaveAccount")} </span>
+              <Link href="/auth/register" className="text-primary hover:underline">{t("auth.signUp")}</Link>
             </div>
           </CardContent>
         </Card>

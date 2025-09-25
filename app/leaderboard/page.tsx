@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Trophy, Medal, Award, TrendingUp, Users, Target, Crown } from "lucide-react"
 import { DashboardNav } from "@/components/dashboard-nav"
 import { LeaderboardTabs } from "@/components/leaderboard-tabs"
+import { getMessages } from "@/lib/server-i18n"
 
 async function getLeaderboardData() {
   // Get top users by points
@@ -122,6 +123,7 @@ async function getLeaderboardData() {
 export default async function LeaderboardPage() {
   const session = await getServerSession()
   const { topUsers, recentTopPerformers, challengeLeaderboards, stats } = await getLeaderboardData()
+  const messages = await getMessages()
 
   const getRankIcon = (rank: number) => {
     if (rank === 1) return <Crown className="h-5 w-5 text-yellow-500" />
@@ -143,8 +145,8 @@ export default async function LeaderboardPage() {
 
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2 text-balance">Leaderboard</h1>
-          <p className="text-muted-foreground text-pretty">See how you rank against other developers</p>
+          <h1 className="text-3xl font-bold mb-2 text-balance">{messages.leaderboard.title}</h1>
+          <p className="text-muted-foreground text-pretty">{messages.leaderboard.description}</p>
         </div>
 
         {/* Stats Overview */}
@@ -155,7 +157,7 @@ export default async function LeaderboardPage() {
                 <Users className="h-4 w-4 text-primary" />
                 <div>
                   <p className="text-2xl font-bold">{stats.totalUsers}</p>
-                  <p className="text-xs text-muted-foreground">Total Users</p>
+                  <p className="text-xs text-muted-foreground">{messages.leaderboard.stats.totalUsers}</p>
                 </div>
               </div>
             </CardContent>
@@ -166,7 +168,7 @@ export default async function LeaderboardPage() {
                 <Target className="h-4 w-4 text-primary" />
                 <div>
                   <p className="text-2xl font-bold">{stats.totalSolutions}</p>
-                  <p className="text-xs text-muted-foreground">Solutions</p>
+                  <p className="text-xs text-muted-foreground">{messages.leaderboard.stats.solutions}</p>
                 </div>
               </div>
             </CardContent>
@@ -177,7 +179,7 @@ export default async function LeaderboardPage() {
                 <Trophy className="h-4 w-4 text-primary" />
                 <div>
                   <p className="text-2xl font-bold">{stats.activeChallenges}</p>
-                  <p className="text-xs text-muted-foreground">Active Challenges</p>
+                  <p className="text-xs text-muted-foreground">{messages.leaderboard.stats.activeChallenges}</p>
                 </div>
               </div>
             </CardContent>
@@ -188,7 +190,7 @@ export default async function LeaderboardPage() {
                 <TrendingUp className="h-4 w-4 text-primary" />
                 <div>
                   <p className="text-2xl font-bold">{stats.averageScore}</p>
-                  <p className="text-xs text-muted-foreground">Avg Score</p>
+                  <p className="text-xs text-muted-foreground">{messages.leaderboard.stats.avgScore}</p>
                 </div>
               </div>
             </CardContent>
