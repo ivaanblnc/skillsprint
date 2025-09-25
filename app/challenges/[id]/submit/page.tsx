@@ -215,6 +215,37 @@ export default function ChallengeSubmitPage() {
     toast.error("Time's up! Auto-submitting your current solution...")
     
     try {
+      let fileUrl: string | undefined = undefined
+
+      // Upload file if present
+      if (uploadedFile) {
+        try {
+          // Get current user first
+          const userResponse = await fetch('/api/user/profile')
+          const userData = await userResponse.json()
+          
+          if (userResponse.ok && userData.id) {
+            const formData = new FormData()
+            formData.append('file', uploadedFile)
+            formData.append('challengeId', challengeId)
+            formData.append('userId', userData.id)
+
+            const uploadResponse = await fetch('/api/submissions/upload', {
+              method: 'POST',
+              body: formData
+            })
+
+            const uploadData = await uploadResponse.json()
+
+            if (uploadResponse.ok) {
+              fileUrl = uploadData.fileUrl
+            }
+          }
+        } catch (uploadError) {
+          console.error('Error uploading file during auto-submit:', uploadError)
+        }
+      }
+
       const response = await fetch('/api/submissions', {
         method: 'POST',
         headers: {
@@ -224,6 +255,7 @@ export default function ChallengeSubmitPage() {
           challengeId,
           code: code || "// Time's up - auto submitted",
           language,
+          fileUrl,
           isDraft: false
         })
       })
@@ -244,7 +276,7 @@ export default function ChallengeSubmitPage() {
       console.error("Auto-submit error:", error)
       toast.error("Failed to auto-submit solution")
     }
-  }, [challengeId, code, language, isSubmitted, isSubmitting, router])
+  }, [challengeId, code, language, uploadedFile, isSubmitted, isSubmitting, router])
 
   // Timer countdown
   useEffect(() => {
@@ -381,6 +413,37 @@ int main() {
   const confirmSaveDraft = async () => {
     setIsSaving(true)
     try {
+      let fileUrl: string | undefined = undefined
+
+      // Upload file if present
+      if (uploadedFile) {
+        // Get current user first
+        const userResponse = await fetch('/api/user/profile')
+        const userData = await userResponse.json()
+        
+        if (!userResponse.ok || !userData.id) {
+          throw new Error('Unable to get user information')
+        }
+
+        const formData = new FormData()
+        formData.append('file', uploadedFile)
+        formData.append('challengeId', challengeId)
+        formData.append('userId', userData.id)
+
+        const uploadResponse = await fetch('/api/submissions/upload', {
+          method: 'POST',
+          body: formData
+        })
+
+        const uploadData = await uploadResponse.json()
+
+        if (!uploadResponse.ok) {
+          throw new Error(uploadData.error || 'Failed to upload file')
+        }
+
+        fileUrl = uploadData.fileUrl
+      }
+
       const response = await fetch('/api/submissions', {
         method: 'POST',
         headers: {
@@ -390,6 +453,7 @@ int main() {
           challengeId,
           code,
           language,
+          fileUrl,
           isDraft: true
         })
       })
@@ -443,6 +507,37 @@ int main() {
   const confirmSubmitSolution = async () => {
     setIsSubmitting(true)
     try {
+      let fileUrl: string | undefined = undefined
+
+      // Upload file if present
+      if (uploadedFile) {
+        // Get current user first
+        const userResponse = await fetch('/api/user/profile')
+        const userData = await userResponse.json()
+        
+        if (!userResponse.ok || !userData.id) {
+          throw new Error('Unable to get user information')
+        }
+
+        const formData = new FormData()
+        formData.append('file', uploadedFile)
+        formData.append('challengeId', challengeId)
+        formData.append('userId', userData.id)
+
+        const uploadResponse = await fetch('/api/submissions/upload', {
+          method: 'POST',
+          body: formData
+        })
+
+        const uploadData = await uploadResponse.json()
+
+        if (!uploadResponse.ok) {
+          throw new Error(uploadData.error || 'Failed to upload file')
+        }
+
+        fileUrl = uploadData.fileUrl
+      }
+
       const response = await fetch('/api/submissions', {
         method: 'POST',
         headers: {
@@ -452,6 +547,7 @@ int main() {
           challengeId,
           code,
           language,
+          fileUrl,
           isDraft: false
         })
       })

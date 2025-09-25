@@ -5,9 +5,10 @@ import { z } from "zod"
 
 const submissionSchema = z.object({
   challengeId: z.string(),
-  code: z.string(),
+  code: z.string().optional(),
   language: z.string(),
   isDraft: z.boolean().default(false),
+  fileUrl: z.string().optional(),
 })
 
 // POST - Create a new submission or save as draft
@@ -22,7 +23,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { challengeId, code, language, isDraft } = submissionSchema.parse(body)
+    const { challengeId, code, language, isDraft, fileUrl } = submissionSchema.parse(body)
 
     // Check if challenge exists and is active
     const challenge = await prisma.challenge.findUnique({
@@ -63,6 +64,7 @@ export async function POST(req: NextRequest) {
           data: {
             code,
             language,
+            fileUrl,
             submittedAt: new Date()
           }
         })
@@ -79,6 +81,7 @@ export async function POST(req: NextRequest) {
             userId: user.id,
             code,
             language,
+            fileUrl,
             status: "PENDING",
             isDraft: true
           } as any
@@ -101,6 +104,7 @@ export async function POST(req: NextRequest) {
         data: {
           code,
           language,
+          fileUrl,
           status: "PENDING",
           isDraft: false,  // Mark as final submission
           submittedAt: new Date()
@@ -114,6 +118,7 @@ export async function POST(req: NextRequest) {
           userId: user.id,
           code,
           language,
+          fileUrl,
           status: "PENDING",
           isDraft: false  // Final submission
         } as any
