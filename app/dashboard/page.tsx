@@ -375,10 +375,11 @@ export default async function DashboardPage() {
             />
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-10">
-            {/* Active Challenges */}
-            <div className="lg:col-span-2">
-              <Card className="glass-elevated">
+          {/* Main Content Grid - Symmetric Layout */}
+          <div className="grid lg:grid-cols-2 gap-8">
+            {/* Left Column - Active Challenges */}
+            <div className="h-full">
+              <Card className="glass-elevated h-full">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
@@ -397,38 +398,40 @@ export default async function DashboardPage() {
                     </Link>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-6">
+                <CardContent className="flex-1">
+                  <div className="space-y-6 h-full">
                     {activeChallenges.length > 0 ? (
-                      activeChallenges.map((challenge) => (
-                        <div key={challenge.id} className="flex items-center justify-between p-6 glass-card liquid-border-lg glass-elevated">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-3">
-                              <h3 className="font-semibold text-lg">{challenge.title}</h3>
-                              <Badge
-                                variant={getDifficultyVariant(challenge.difficulty)}
-                                className="liquid-border"
-                              >
-                                {t(`challenges.difficulty.${challenge.difficulty?.toLowerCase()}`)}
-                              </Badge>
+                      <div className="space-y-4">
+                        {activeChallenges.slice(0, 3).map((challenge) => (
+                          <div key={challenge.id} className="flex items-center justify-between p-6 glass-card liquid-border-lg glass-elevated">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-3">
+                                <h3 className="font-semibold text-lg">{challenge.title}</h3>
+                                <Badge
+                                  variant={getDifficultyVariant(challenge.difficulty)}
+                                  className="liquid-border"
+                                >
+                                  {t(`challenges.difficulty.${challenge.difficulty?.toLowerCase()}`)}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center gap-4 text-muted-foreground text-sm">
+                                <span className="flex items-center gap-1">
+                                  <Trophy className="h-4 w-4 text-primary" />{challenge.points} pts
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Clock className="h-4 w-4 text-primary" />{challenge.timeLimit}min
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Users className="h-4 w-4 text-primary" />{challenge._count?.submissions || 0}
+                                </span>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-6 text-muted-foreground">
-                              <span className="flex items-center gap-2 p-2 glass-card liquid-border">
-                                <Trophy className="h-4 w-4 text-primary" />{challenge.points} {t("dashboard.pts")}
-                              </span>
-                              <span className="flex items-center gap-2 p-2 glass-card liquid-border">
-                                <Clock className="h-4 w-4 text-primary" />{challenge.timeLimit}{t("dashboard.min")}
-                              </span>
-                              <span className="flex items-center gap-2 p-2 glass-card liquid-border">
-                                <Users className="h-4 w-4 text-primary" />{challenge._count?.submissions || 0}
-                              </span>
-                            </div>
+                            <Link href={`/challenges/${challenge.id}`}>
+                              <Button size="lg" className="liquid-border">{t("dashboard.startChallenge")}</Button>
+                            </Link>
                           </div>
-                          <Link href={`/challenges/${challenge.id}`}>
-                            <Button size="lg" className="liquid-border">{t("dashboard.startChallenge")}</Button>
-                          </Link>
-                        </div>
-                      ))
+                        ))}
+                      </div>
                     ) : (
                       <div className="text-center py-12 glass-card liquid-border-lg glass-elevated">
                         <Zap className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -441,40 +444,41 @@ export default async function DashboardPage() {
               </Card>
             </div>
 
-            {/* Recent Activity */}
-            <div>
+            {/* Right Column - Recent Activity & Quick Actions */}
+            <div className="space-y-8 h-full">
+              {/* Recent Activity */}
               <Card className="glass-elevated">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-3 text-xl">
+                  <CardTitle className="flex items-center gap-3 text-2xl">
                     <div className="p-2 bg-primary/5 liquid-border">
-                      <TrendingUp className="h-5 w-5 text-primary" />
+                      <TrendingUp className="h-6 w-6 text-primary" />
                     </div>
                     {t("dashboard.recentActivity")}
                   </CardTitle>
-                  <CardDescription className="text-base">{t("dashboard.yourLatest")}</CardDescription>
+                  <CardDescription className="text-base mt-2">{t("dashboard.yourLatest")}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                     {recentSubmissions.length > 0 ? (
-                      recentSubmissions.map((submission) => (
+                      recentSubmissions.slice(0, 3).map((submission) => (
                         <div key={submission.id} className="flex items-center justify-between p-4 glass-card liquid-border glass-elevated">
                           <div className="flex-1">
                             <p className="font-semibold text-base">{submission.challenge.title}</p>
                             <div className="flex items-center gap-3 mt-2">
                               <Badge
                                 variant={getStatusVariant(submission.status)}
-                                className="liquid-border"
+                                className="liquid-border text-xs"
                               >
                                 {getStatusText(submission.status, t)}
                               </Badge>
                               {submission.score && (
-                                <span className="text-sm text-muted-foreground font-medium">
+                                <span className="text-xs text-muted-foreground font-medium">
                                   {submission.score}/100
                                 </span>
                               )}
                             </div>
                           </div>
-                          <div className="text-sm text-muted-foreground font-medium">
+                          <div className="text-xs text-muted-foreground font-medium">
                             {submission.submittedAt instanceof Date 
                               ? submission.submittedAt.toLocaleDateString() 
                               : new Date(submission.submittedAt).toLocaleDateString()}
@@ -482,10 +486,10 @@ export default async function DashboardPage() {
                         </div>
                       ))
                     ) : (
-                      <div className="text-center py-12 glass-card liquid-border-lg glass-elevated">
-                        <Code2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p className="text-lg font-medium mb-2">{t("dashboard.noSubmissionsYet")}</p>
-                        <p className="text-muted-foreground">{t("dashboard.startFirst")}</p>
+                      <div className="text-center py-8 glass-card liquid-border-lg glass-elevated">
+                        <Code2 className="h-10 w-10 mx-auto mb-3 opacity-50" />
+                        <p className="text-base font-medium mb-1">{t("dashboard.noSubmissionsYet")}</p>
+                        <p className="text-sm text-muted-foreground">{t("dashboard.startFirst")}</p>
                       </div>
                     )}
                   </div>
@@ -493,31 +497,36 @@ export default async function DashboardPage() {
               </Card>
 
               {/* Quick Actions */}
-              <Card className="mt-8 glass-elevated">
+              <Card className="glass-elevated">
                 <CardHeader>
-                  <CardTitle className="text-xl">{t("dashboard.quickActions")}</CardTitle>
+                  <CardTitle className="flex items-center gap-3 text-2xl">
+                    <div className="p-2 bg-primary/5 liquid-border">
+                      <Zap className="h-6 w-6 text-primary" />
+                    </div>
+                    {t("dashboard.quickActions")}
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3">
                   <Link href="/challenges" className="block">
-                    <Button variant="outline" className="w-full justify-start h-12 liquid-border">
-                      <Target className="mr-3 h-5 w-5" /> {t("dashboard.browseChallenges")}
+                    <Button variant="outline" className="w-full justify-start h-11 liquid-border">
+                      <Target className="mr-3 h-4 w-4" /> {t("dashboard.browseChallenges")}
                     </Button>
                   </Link>
                   <Link href="/leaderboard" className="block">
-                    <Button variant="outline" className="w-full justify-start h-12 liquid-border">
-                      <Trophy className="mr-3 h-5 w-5" /> {t("dashboard.viewLeaderboard")}
+                    <Button variant="outline" className="w-full justify-start h-11 liquid-border">
+                      <Trophy className="mr-3 h-4 w-4" /> {t("dashboard.viewLeaderboard")}
                     </Button>
                   </Link>
                   {user.role === "CREATOR" && (
                     <>
                       <Link href="/challenges/create" className="block">
-                        <Button variant="outline" className="w-full justify-start bg-transparent">
-                          <Code2 className="mr-2 h-4 w-4" /> {t("dashboard.createChallenge")}
+                        <Button variant="outline" className="w-full justify-start h-11 liquid-border">
+                          <Code2 className="mr-3 h-4 w-4" /> {t("dashboard.createChallenge")}
                         </Button>
                       </Link>
                       <Link href="/challenges/manage" className="block">
-                        <Button variant="outline" className="w-full justify-start bg-transparent">
-                          <Trophy className="mr-2 h-4 w-4" /> {t("dashboard.manageMyChallenges")}
+                        <Button variant="outline" className="w-full justify-start h-11 liquid-border">
+                          <Trophy className="mr-3 h-4 w-4" /> {t("dashboard.manageMyChallenges")}
                         </Button>
                       </Link>
                     </>
@@ -525,13 +534,13 @@ export default async function DashboardPage() {
                   {user.role === "JUDGE" && (
                     <>
                       <Link href="/judge/submissions" className="block">
-                        <Button variant="outline" className="w-full justify-start bg-transparent">
-                          <Target className="mr-2 h-4 w-4" /> {t("dashboard.reviewSubmissions")}
+                        <Button variant="outline" className="w-full justify-start h-11 liquid-border">
+                          <Target className="mr-3 h-4 w-4" /> {t("dashboard.reviewSubmissions")}
                         </Button>
                       </Link>
                       <Link href="/judge/challenges" className="block">
-                        <Button variant="outline" className="w-full justify-start bg-transparent">
-                          <Users className="mr-2 h-4 w-4" /> {t("dashboard.judgeChallenges")}
+                        <Button variant="outline" className="w-full justify-start h-11 liquid-border">
+                          <Users className="mr-3 h-4 w-4" /> {t("dashboard.judgeChallenges")}
                         </Button>
                       </Link>
                     </>

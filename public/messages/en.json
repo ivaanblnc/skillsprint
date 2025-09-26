@@ -443,11 +443,13 @@
   },
   "auth": {
     "signIn": "Sign In",
+    "SignIn": "Sign In",
     "signUp": "Sign Up",
     "email": "Email",
     "password": "Password",
     "confirmPassword": "Confirm Password",
     "fullName": "Full Name",
+    "role": "Role",
     "forgotPassword": "Forgot Password?",
     "dontHaveAccount": "Don't have an account?",
     "alreadyHaveAccount": "Already have an account?",

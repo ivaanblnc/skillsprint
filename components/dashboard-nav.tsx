@@ -26,6 +26,7 @@ export function DashboardNav() {
   const [userInfo, setUserInfo] = useState<{name: string | null, email: string | null, role: string | null} | null>(null)
   const [loading, setLoading] = useState(true)
 
+
   // Dynamic navigation based on user role
   const getNavigation = () => {
     const baseNavigation = [
@@ -80,6 +81,8 @@ export function DashboardNav() {
     return displayName
   }
 
+
+
   // Initialize Supabase and get user
   useEffect(() => {
     const initializeAuth = async () => {
@@ -110,131 +113,163 @@ export function DashboardNav() {
   }, [])
 
   return (
-    <nav className="glass-nav sticky top-0 z-50">
-      <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
-          <Link href="/dashboard" className="flex items-center gap-3">
-            <div className="bg-primary liquid-border p-2.5 glass-elevated">
-              <Code2 className="h-6 w-6 text-primary-foreground" />
+    <nav className="glass-nav-enhanced fixed top-0 left-0 right-0 z-50">
+      <div className="container mx-auto px-6">
+        <div className="flex h-20 items-center justify-between">
+          {/* Enhanced Logo */}
+          <Link href="/dashboard" className="flex items-center gap-4 group">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5 liquid-border-lg blur-sm group-hover:blur-none transition-all duration-300"></div>
+              <div className="relative bg-primary liquid-border-lg p-3 glass-elevated-lg group-hover:scale-105 transition-transform duration-300">
+                <Code2 className="h-7 w-7 text-primary-foreground" />
+              </div>
             </div>
-            <span className="text-xl font-bold text-foreground">SkillSprint</span>
+            <div className="flex flex-col">
+              <span className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors duration-300">SkillSprint</span>
+              <span className="text-xs text-muted-foreground font-medium tracking-wide">Code • Compete • Conquer</span>
+            </div>
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-8">
-            {navigation.map((item) => {
+          {/* Enhanced Desktop Navigation */}
+          <div className="hidden md:flex items-center gap-2">
+            {navigation.map((item, index) => {
               const Icon = item.icon
               return (
                 <Link
                   key={item.name}
                   href={item.href}
-                  className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors duration-300 px-3 py-2 liquid-border hover:bg-accent/20"
+                  className="group relative flex items-center gap-3 px-6 py-3 liquid-border-lg glass-nav-item transition-all duration-300 hover:glass-nav-item-hover"
                 >
-                  <Icon className="h-4 w-4" />
-                  <span className="font-medium">{item.name}</span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-primary/10 liquid-border-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <Icon className="relative h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors duration-300" />
+                  <span className="relative font-semibold text-muted-foreground group-hover:text-foreground transition-colors duration-300">{item.name}</span>
+                  <div className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-gradient-to-r from-primary to-primary/60 liquid-border transition-all duration-300 group-hover:w-3/4 group-hover:-translate-x-1/2"></div>
                 </Link>
               )
             })}
           </div>
 
-          {/* User Menu */}
-          <div className="flex items-center gap-2">
-            {/* Language Switcher */}
-            <LanguageSwitcher />
+          {/* Enhanced User Menu */}
+          <div className="flex items-center gap-4">
+            {/* Enhanced Language Switcher */}
+            <div className="glass-nav-item liquid-border-lg p-2">
+              <LanguageSwitcher />
+            </div>
 
-            {/* Mobile Menu Button */}
+            {/* Enhanced Mobile Menu Button */}
             <Button
               variant="ghost"
               size="sm"
-              className="md:hidden"
+              className="md:hidden glass-nav-item liquid-border-lg p-3 hover:glass-nav-item-hover"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
               {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
 
-            {/* User Dropdown */}
+            {/* Enhanced User Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={user?.user_metadata?.avatar_url || ""} alt={userInfo?.name || userInfo?.email || ""} />
-                    <AvatarFallback>
-                      {getDisplayName().charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
+                <Button variant="ghost" className="relative group">
+                  <div className="flex items-center gap-3 glass-nav-item liquid-border-lg p-3 hover:glass-nav-item-hover transition-all duration-300">
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5 rounded-full blur-sm group-hover:blur-none transition-all duration-300"></div>
+                      <Avatar className="relative h-10 w-10 liquid-border glass-elevated">
+                        <AvatarImage src={user?.user_metadata?.avatar_url || ""} alt={userInfo?.name || userInfo?.email || ""} />
+                        <AvatarFallback className="bg-primary text-primary-foreground font-bold">
+                          {getDisplayName().charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
+                    <div className="hidden lg:block text-left">
+                      <p className="text-sm font-semibold text-foreground">{getDisplayName()}</p>
+                      <p className="text-xs text-muted-foreground capitalize">{userInfo?.role?.toLowerCase() || 'Participant'}</p>
+                    </div>
+                  </div>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" forceMount>
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">
-                      {getDisplayName()}
-                    </p>
-                    <p className="text-xs leading-none text-muted-foreground">{userInfo?.email || user?.email}</p>
+              <DropdownMenuContent className="w-80 glass-dropdown liquid-border-lg p-2" align="end" forceMount>
+                <DropdownMenuLabel className="glass-nav-item liquid-border p-4 mb-2">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-12 w-12 liquid-border glass-elevated">
+                      <AvatarImage src={user?.user_metadata?.avatar_url || ""} alt={userInfo?.name || userInfo?.email || ""} />
+                      <AvatarFallback className="bg-primary text-primary-foreground font-bold text-lg">
+                        {getDisplayName().charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col flex-1 min-w-0">
+                      <p className="text-sm font-semibold leading-none mb-1 truncate">
+                        {getDisplayName()}
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-none mb-1 break-all">{userInfo?.email || user?.email}</p>
+                      <span className="text-xs bg-primary/10 text-primary px-2 py-1 liquid-border font-medium capitalize w-fit">
+                        {userInfo?.role?.toLowerCase() || 'Participant'}
+                      </span>
+                    </div>
                   </div>
                 </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard" className="flex items-center">
-                    <Target className="mr-2 h-4 w-4" />
-                    {t("nav.dashboard")}
+                <DropdownMenuSeparator className="my-2" />
+                <DropdownMenuItem asChild className="glass-nav-item liquid-border p-3 mb-1 hover:glass-nav-item-hover">
+                  <Link href="/dashboard" className="flex items-center gap-3">
+                    <Target className="h-4 w-4 text-primary" />
+                    <span className="font-medium">{t("nav.dashboard")}</span>
                   </Link>
                 </DropdownMenuItem>
                 {userInfo?.role === 'CREATOR' && (
                   <>
-                    <DropdownMenuItem asChild>
-                      <Link href="/challenges/create" className="flex items-center">
-                        <Plus className="mr-2 h-4 w-4" />
-                        {t("nav.createChallenge")}
+                    <DropdownMenuItem asChild className="glass-nav-item liquid-border p-3 mb-1 hover:glass-nav-item-hover">
+                      <Link href="/challenges/create" className="flex items-center gap-3">
+                        <Plus className="h-4 w-4 text-primary" />
+                        <span className="font-medium">{t("nav.createChallenge")}</span>
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/challenges/manage" className="flex items-center">
-                        <FolderOpen className="mr-2 h-4 w-4" />
-                        {t("nav.myChallenges")}
+                    <DropdownMenuItem asChild className="glass-nav-item liquid-border p-3 mb-1 hover:glass-nav-item-hover">
+                      <Link href="/challenges/manage" className="flex items-center gap-3">
+                        <FolderOpen className="h-4 w-4 text-primary" />
+                        <span className="font-medium">{t("nav.myChallenges")}</span>
                       </Link>
                     </DropdownMenuItem>
                   </>
                 )}
-                <DropdownMenuItem asChild>
-                  <Link href="/profile" className="flex items-center">
-                    <Settings className="mr-2 h-4 w-4" />
-                    {t("nav.profile")}
+                <DropdownMenuItem asChild className="glass-nav-item liquid-border p-3 mb-1 hover:glass-nav-item-hover">
+                  <Link href="/profile" className="flex items-center gap-3">
+                    <Settings className="h-4 w-4 text-primary" />
+                    <span className="font-medium">{t("nav.profile")}</span>
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
+                <DropdownMenuSeparator className="my-2" />
                 <DropdownMenuItem
-                  className="text-destructive focus:text-destructive"
+                  className="glass-nav-item liquid-border p-3 text-destructive hover:text-destructive-foreground hover:bg-destructive/90 transition-all duration-300"
                   onClick={async () => {
                     const supabase = createClient()
                     await supabase.auth.signOut()
                     router.push('/')
                   }}
                 >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  {t("nav.signOut")}
+                  <div className="flex items-center gap-3">
+                    <LogOut className="h-4 w-4" />
+                    <span className="font-medium">{t("nav.signOut")}</span>
+                  </div>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </div>
 
-        {/* Mobile Navigation */}
+        {/* Enhanced Mobile Navigation */}
         {isMobileMenuOpen && (
-          <div className="md:hidden border-t py-4">
-            <div className="space-y-2">
+          <div className="md:hidden glass-nav-item liquid-border-lg mt-4 p-4">
+            <div className="space-y-3">
               {navigation.map((item) => {
                 const Icon = item.icon
                 return (
                   <Link
                     key={item.name}
                     href={item.href}
-                    className="flex items-center gap-2 px-3 py-2 text-muted-foreground hover:text-foreground transition-colors"
+                    className="flex items-center gap-4 p-4 glass-nav-item liquid-border hover:glass-nav-item-hover transition-all duration-300 group"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    <Icon className="h-4 w-4" />
-                    {item.name}
+                    <Icon className="h-5 w-5 text-primary group-hover:scale-110 transition-transform duration-300" />
+                    <span className="font-semibold text-foreground group-hover:text-primary transition-colors duration-300">{item.name}</span>
                   </Link>
                 )
               })}
