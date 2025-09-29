@@ -52,7 +52,7 @@ export default async function HomePage() {
   ]
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="-mt-16 min-h-screen bg-background">
       {/* Navigation */}
       <nav className="glass-nav sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
