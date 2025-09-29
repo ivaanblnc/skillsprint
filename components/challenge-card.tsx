@@ -1,199 +1,160 @@
+/**
+ * Challenge Card Component - Refactorized
+ * Componente reutilizable para mostrar información de challenges
+ */
+
 "use client"
 
-import { useState, useEffect } from "react"
+import React from 'react'
+import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Trophy, Clock, Users, Target, Calendar, CheckCircle, AlertCircle, Clock as ClockIcon } from "lucide-react"
-import Link from "next/link"
-import { useTranslations } from "@/lib/i18n"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Trophy, Clock, Users, ArrowRight } from "lucide-react"
+import { translate } from "@/lib/i18n-helpers"
+// Helper function for client-side translation
+import { getBadgeVariant, formatDate } from "@/lib/utils/index"
+import type { Challenge } from "@/lib/types"
 
-interface Challenge {
-  id: string
-  title: string
-  description: string
-  difficulty: "EASY" | "MEDIUM" | "HARD"
-  points: number
-  timeLimit: number
-  endDate: Date | string
-  creator: {
-    name: string | null
-  } | null
-  _count: {
-    submissions: number
-  }
-}
-
-interface Submission {
-  id: string
-  status: string
-  score: number | null
-  submittedAt: string
-}
-
+// Component Props Interface
 interface ChallengeCardProps {
   challenge: Challenge
+  translations: Record<string, any>
+  showCreator?: boolean
+  size?: 'default' | 'compact'
 }
 
-export function ChallengeCard({ challenge }: ChallengeCardProps) {
-  const t = useTranslations()
-  const [submission, setSubmission] = useState<Submission | null>(null)
-  const [loading, setLoading] = useState(true)
+/**
+ * Challenge Card Component
+ * Muestra información del challenge de forma consistente
+ */
+export const ChallengeCard: React.FC<ChallengeCardProps> = ({
+  challenge,
+  translations,
+  showCreator = true,
+  size = 'default'
+}) => {
+  const t = (key: string, params?: Record<string, string>) => 
+    translate(translations, key, params)
 
-  useEffect(() => {
-    const fetchSubmission = async () => {
-      try {
-        const response = await fetch(`/api/submissions?challengeId=${challenge.id}`)
-        if (response.ok) {
-          const data = await response.json()
-          setSubmission(data.submission)
-        }
-      } catch (error) {
-        console.error("Error fetching submission:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchSubmission()
-  }, [challenge.id])
-
-  const timeRemaining = Math.max(
-    0,
-    Math.ceil((new Date(challenge.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-  )
-
-  const getSubmissionBadge = () => {
-    if (!submission) return null
-
-    const statusConfig = {
-      ACCEPTED: { icon: CheckCircle, variant: "secondary" as const, text: t("submissions.status.accepted"), color: "text-green-600" },
-      REJECTED: { icon: AlertCircle, variant: "destructive" as const, text: t("submissions.status.rejected"), color: "text-red-600" },
-      PENDING: { icon: ClockIcon, variant: "default" as const, text: t("submissions.status.pending"), color: "text-yellow-600" },
-      WRONG_ANSWER: { icon: AlertCircle, variant: "destructive" as const, text: t("submissions.status.wrongAnswer"), color: "text-red-600" },
-      RUNTIME_ERROR: { icon: AlertCircle, variant: "destructive" as const, text: t("submissions.status.runtimeError"), color: "text-red-600" },
-      COMPILATION_ERROR: { icon: AlertCircle, variant: "destructive" as const, text: t("submissions.status.compilationError"), color: "text-red-600" },
-      TIME_LIMIT_EXCEEDED: { icon: AlertCircle, variant: "destructive" as const, text: t("submissions.status.timeLimitExceeded"), color: "text-red-600" },
-    }
-
-    const config = statusConfig[submission.status as keyof typeof statusConfig]
-    if (!config) return null
-
-    const Icon = config.icon
-
-    return (
-      <div className="flex items-center gap-2 mt-2">
-        <Icon className={`h-4 w-4 ${config.color}`} />
-        <Badge variant={config.variant} className="text-xs">
-          {config.text}
-        </Badge>
-        {submission.score && (
-          <span className="text-xs text-muted-foreground">
-            {submission.score}/100
-          </span>
-        )}
-      </div>
-    )
-  }
+  const cardClassName = size === 'compact' 
+    ? "glass-elevated h-auto" 
+    : "glass-elevated h-[320px] hover:glass-elevated-hover transition-all duration-300"
 
   return (
-    <Card className="h-full glass-elevated">
-      <CardHeader className="pb-4">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
-            <CardTitle className="text-lg mb-3 text-balance leading-tight">{challenge.title}</CardTitle>
-            <div className="flex items-center gap-2">
-              <Badge
-                variant={
-                  challenge.difficulty === "EASY"
-                    ? "secondary"
-                    : challenge.difficulty === "MEDIUM"
-                      ? "default"
-                      : "destructive"
-                }
-                className="liquid-border text-xs"
-              >
-                {t(`challenges.difficulty.${challenge.difficulty.toLowerCase()}`)}
-              </Badge>
-              <Badge variant="outline" className="text-xs liquid-border">
-                <Trophy className="h-3 w-3 mr-1" />
-                {challenge.points} pts
-              </Badge>
-            </div>
-          </div>
+    <Card className={cardClassName}>
+      <CardHeader>
+        <div className="flex items-start justify-between mb-3">
+          <CardTitle className="text-lg font-bold leading-tight line-clamp-2">
+            {challenge.title}
+          </CardTitle>
+          <Badge
+            variant={getBadgeVariant.difficulty(challenge.difficulty)}
+            className="liquid-border text-xs font-medium shrink-0 ml-2"
+          >
+            {t(`challenges.difficulty.${challenge.difficulty.toLowerCase()}`)}
+          </Badge>
         </div>
-        <CardDescription className="text-sm leading-relaxed line-clamp-2 mb-4">{challenge.description}</CardDescription>
         
-        {/* Submission Status */}
-        {!loading && getSubmissionBadge()}
+        <CardDescription className="text-sm line-clamp-3 text-pretty">
+          {challenge.description || t("challenges.noDescription")}
+        </CardDescription>
       </CardHeader>
-      <CardContent className="pt-0">
-        <div className="space-y-4">
-          {/* Challenge Stats */}
-          <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1 p-2 bg-muted/30 liquid-border">
-              <Clock className="h-3 w-3" />
-              <span>{challenge.timeLimit}m</span>
-            </div>
-            <div className="flex items-center gap-1 p-2 bg-muted/30 liquid-border">
-              <Users className="h-3 w-3" />
-              <span>{challenge._count.submissions}</span>
-            </div>
-            <div className="flex items-center gap-1 p-2 bg-muted/30 liquid-border">
-              <Calendar className="h-3 w-3" />
-              <span>{timeRemaining}d</span>
-            </div>
-          </div>
 
-          {/* Creator Info */}
-          <div className="text-xs text-muted-foreground">
-            {t("challenges.details.createdBy")} {challenge.creator?.name || t("common.anonymous")}
+      <CardContent className="flex flex-col justify-between flex-1">
+        {/* Challenge Stats */}
+        <div className="flex items-center gap-4 mb-6 text-sm text-muted-foreground">
+          <div className="flex items-center gap-1" title={t("challenges.points")}>
+            <Trophy className="h-4 w-4 text-primary" />
+            <span className="font-medium">{challenge.points}</span>
           </div>
           
-          {/* Action Buttons */}
-          <div className="pt-8">
-            {submission ? (
-              <div>
-                <Link href={`/challenges/${challenge.id}`}>
-                  <Button size="sm" variant="outline" className="w-full liquid-border">
-                    {t("challenges.details.viewDetails")}
-                  </Button>
-                </Link>
-                {/* Solo mostrar botones de acción según el estado de la submission */}
-                {((submission as any).isDraft || 
-                 (submission.status === "WRONG_ANSWER" || 
-                  submission.status === "RUNTIME_ERROR" || 
-                  submission.status === "COMPILATION_ERROR" ||
-                  submission.status === "TIME_LIMIT_EXCEEDED")) && (
-                  <div className="mt-6">
-                    <Link href={`/challenges/${challenge.id}/submit`}>
-                      <Button size="sm" className="w-full liquid-border">
-                        {(submission as any).isDraft ? t("challenges.details.continueDraft") : t("challenges.details.improveSolution")}
-                      </Button>
-                    </Link>
-                  </div>
-                )}
-                {/* Para submissions aceptadas, mostrar un botón indicativo */}
-                {submission.status === "ACCEPTED" && (
-                  <div className="mt-6">
-                    <Button size="sm" variant="secondary" disabled className="w-full liquid-border">
-                      <CheckCircle className="h-3 w-3 mr-2" />
-                      {t("challenges.details.completed")}
-                    </Button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <Link href={`/challenges/${challenge.id}`}>
-                <Button size="sm" className="w-full liquid-border">
-                  <Target className="h-3 w-3 mr-2" />
-                  {t("challenges.details.startChallenge")}
-                </Button>
-              </Link>
-            )}
+          <div className="flex items-center gap-1" title={t("challenges.timeLimit")}>
+            <Clock className="h-4 w-4 text-primary" />
+            <span className="font-medium">{challenge.timeLimit}min</span>
           </div>
+          
+          <div className="flex items-center gap-1" title={t("challenges.participants")}>
+            <Users className="h-4 w-4 text-primary" />
+            <span className="font-medium">{challenge._count?.submissions || 0}</span>
+          </div>
+        </div>
+
+        {/* Creator and Action */}
+        <div className="flex items-center justify-between">
+          {showCreator && challenge.creator && (
+            <div className="flex items-center gap-2">
+              <Avatar className="h-6 w-6">
+                <AvatarImage 
+                  src={challenge.creator.image || ""} 
+                  alt={challenge.creator.name || "Creator"} 
+                />
+                <AvatarFallback className="text-xs">
+                  {challenge.creator.name?.charAt(0) || "?"}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-sm text-muted-foreground">
+                {challenge.creator.name || t("challenges.anonymous")}
+              </span>
+            </div>
+          )}
+          
+          {!showCreator && (
+            <div className="text-xs text-muted-foreground">
+              {formatDate.short(challenge.createdAt)}
+            </div>
+          )}
+
+          <Link href={`/challenges/${challenge.id}`}>
+            <Button 
+              size={size === 'compact' ? 'sm' : 'default'} 
+              className="liquid-border group"
+            >
+              {size === 'compact' ? t("challenges.view") : t("challenges.startChallenge")}
+              <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+            </Button>
+          </Link>
         </div>
       </CardContent>
     </Card>
   )
 }
+
+// Variant for dashboard display
+export const ChallengeCardCompact: React.FC<Omit<ChallengeCardProps, 'size'>> = (props) => (
+  <ChallengeCard {...props} size="compact" />
+)
+
+// Skeleton for loading state
+export const ChallengeCardSkeleton: React.FC = () => (
+  <Card className="glass-elevated h-[320px]">
+    <CardHeader>
+      <div className="flex items-start justify-between mb-3">
+        <div className="h-6 w-3/4 bg-muted animate-pulse rounded" />
+        <div className="h-5 w-16 bg-muted animate-pulse rounded ml-2" />
+      </div>
+      <div className="space-y-2">
+        <div className="h-4 w-full bg-muted animate-pulse rounded" />
+        <div className="h-4 w-3/4 bg-muted animate-pulse rounded" />
+      </div>
+    </CardHeader>
+    <CardContent className="flex flex-col justify-between flex-1">
+      <div className="flex items-center gap-4 mb-6">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-1">
+            <div className="h-4 w-4 bg-muted animate-pulse rounded" />
+            <div className="h-4 w-8 bg-muted animate-pulse rounded" />
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="h-6 w-6 bg-muted animate-pulse rounded-full" />
+          <div className="h-4 w-20 bg-muted animate-pulse rounded" />
+        </div>
+        <div className="h-10 w-24 bg-muted animate-pulse rounded" />
+      </div>
+    </CardContent>
+  </Card>
+)

@@ -116,6 +116,99 @@ function PaginationEllipsis({
   )
 }
 
+// Custom Pagination Component for our app
+interface CustomPaginationProps {
+  currentPage: number
+  totalPages: number
+  onPageChange: (page: number) => void
+  hasNext: boolean
+  hasPrev: boolean
+}
+
+function CustomPagination({ 
+  currentPage, 
+  totalPages, 
+  onPageChange, 
+  hasNext, 
+  hasPrev 
+}: CustomPaginationProps) {
+  const generatePageNumbers = () => {
+    const pages = []
+    const showEllipsis = totalPages > 7
+    
+    if (!showEllipsis) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i)
+      }
+      return pages
+    }
+    
+    // Always show first page
+    pages.push(1)
+    
+    if (currentPage > 4) {
+      pages.push('ellipsis-start')
+    }
+    
+    // Show pages around current page
+    const start = Math.max(2, currentPage - 1)
+    const end = Math.min(totalPages - 1, currentPage + 1)
+    
+    for (let i = start; i <= end; i++) {
+      pages.push(i)
+    }
+    
+    if (currentPage < totalPages - 3) {
+      pages.push('ellipsis-end')
+    }
+    
+    // Always show last page if more than 1 page
+    if (totalPages > 1) {
+      pages.push(totalPages)
+    }
+    
+    return pages
+  }
+
+  // Siempre mostrar paginación, incluso con 1 página
+  // if (totalPages <= 1) return null
+
+  return (
+    <Pagination>
+      <PaginationContent>
+        <PaginationItem>
+          <PaginationPrevious 
+            onClick={hasPrev ? () => onPageChange(currentPage - 1) : undefined}
+            className={cn(!hasPrev && "pointer-events-none opacity-50")}
+          />
+        </PaginationItem>
+        
+        {generatePageNumbers().map((page, index) => (
+          <PaginationItem key={index}>
+            {typeof page === 'string' ? (
+              <PaginationEllipsis />
+            ) : (
+              <PaginationLink
+                onClick={() => onPageChange(page)}
+                isActive={currentPage === page}
+              >
+                {page}
+              </PaginationLink>
+            )}
+          </PaginationItem>
+        ))}
+        
+        <PaginationItem>
+          <PaginationNext 
+            onClick={hasNext ? () => onPageChange(currentPage + 1) : undefined}
+            className={cn(!hasNext && "pointer-events-none opacity-50")}
+          />
+        </PaginationItem>
+      </PaginationContent>
+    </Pagination>
+  )
+}
+
 export {
   Pagination,
   PaginationContent,
@@ -124,4 +217,5 @@ export {
   PaginationPrevious,
   PaginationNext,
   PaginationEllipsis,
+  CustomPagination as default,
 }

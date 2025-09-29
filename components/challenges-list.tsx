@@ -1,29 +1,19 @@
+/**
+ * Challenges List Component - Refactorized
+ * Usa los nuevos componentes modularizados
+ */
 "use client"
 
-import { useState, useTransition } from "react"
-import { useSearchParams, useRouter, usePathname } from "next/navigation"
+import React, { useState, useTransition } from "react"
+import { usePathname, useSearchParams } from "next/navigation"
+import { ChallengeCard } from "@/components/challenge-card"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Button } from "@/components/ui/button"
+import { useRouter } from "next/navigation"
 import { Search, X, Code2, ChevronLeft, ChevronRight } from "lucide-react"
-import { ChallengeCard } from "./challenge-card"
-import { useTranslations } from "@/lib/i18n"
-
-interface Challenge {
-  id: string
-  title: string
-  description: string
-  difficulty: "EASY" | "MEDIUM" | "HARD"
-  points: number
-  timeLimit: number
-  endDate: Date | string
-  creator: {
-    name: string | null
-  } | null
-  _count: {
-    submissions: number
-  }
-}
+import { translate } from "@/lib/i18n-helpers"
+import type { Challenge } from "@/lib/types"
 
 interface Pagination {
   currentPage: number
@@ -40,10 +30,11 @@ interface ChallengesListProps {
     difficulty?: string
     search?: string
   }
+  translations: Record<string, any>
 }
 
-export function ChallengesList({ initialChallenges, pagination, currentFilters }: ChallengesListProps) {
-  const t = useTranslations()
+export function ChallengesList({ initialChallenges, pagination, currentFilters, translations }: ChallengesListProps) {
+  const t = (key: string, params?: Record<string, any>) => translate(translations, key, params)
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -107,7 +98,7 @@ export function ChallengesList({ initialChallenges, pagination, currentFilters }
   return (
     <div className="space-y-8">
       {/* Filters */}
-      <div className="glass-card liquid-border-lg p-6 glass-elevated">
+      <div className="border rounded-lg p-6 bg-card">
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Search */}
           <form onSubmit={handleSearchSubmit} className="flex-1">
@@ -118,7 +109,7 @@ export function ChallengesList({ initialChallenges, pagination, currentFilters }
                 placeholder={t("challenges.searchPlaceholder")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 liquid-border"
+                className="pl-10"
               />
               {searchTerm && (
                 <button
@@ -138,7 +129,7 @@ export function ChallengesList({ initialChallenges, pagination, currentFilters }
 
           {/* Difficulty Filter */}
           <Select value={difficulty} onValueChange={handleDifficultyChange}>
-            <SelectTrigger className="w-full lg:w-48 liquid-border">
+            <SelectTrigger className="w-full lg:w-48">
               <SelectValue placeholder={t("challenges.selectDifficulty")} />
             </SelectTrigger>
             <SelectContent>
@@ -151,7 +142,7 @@ export function ChallengesList({ initialChallenges, pagination, currentFilters }
 
           {/* Clear Filters */}
           {(searchTerm || difficulty !== "all") && (
-            <Button variant="outline" onClick={clearFilters} className="liquid-border">
+            <Button variant="outline" onClick={clearFilters}>
               <X className="h-4 w-4 mr-2" />
               {t("challenges.clearFilters")}
             </Button>
@@ -172,12 +163,16 @@ export function ChallengesList({ initialChallenges, pagination, currentFilters }
         <div className={`grid gap-6 ${isPending ? 'opacity-50' : ''}`}>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {initialChallenges.map((challenge) => (
-              <ChallengeCard key={challenge.id} challenge={challenge} />
+              <ChallengeCard 
+                key={challenge.id} 
+                challenge={challenge} 
+                translations={translations}
+              />
             ))}
           </div>
         </div>
       ) : (
-        <div className="text-center py-20 glass-card liquid-border-lg glass-elevated">
+        <div className="text-center py-20 border rounded-lg bg-card">
           <Code2 className="h-16 w-16 mx-auto mb-6 text-muted-foreground opacity-50" />
           <h3 className="text-2xl font-semibold mb-4">{t("challenges.noChallengesFound")}</h3>
           <p className="text-muted-foreground mb-8 text-lg max-w-md mx-auto">
@@ -187,7 +182,7 @@ export function ChallengesList({ initialChallenges, pagination, currentFilters }
             }
           </p>
           {(currentFilters.search || currentFilters.difficulty) && (
-            <Button variant="outline" onClick={clearFilters} size="lg" className="liquid-border-lg">
+            <Button variant="outline" onClick={clearFilters} size="lg">
               {t("challenges.clearFilters")}
             </Button>
           )}
@@ -196,13 +191,12 @@ export function ChallengesList({ initialChallenges, pagination, currentFilters }
 
       {/* Pagination - Always show if there are challenges */}
       {initialChallenges.length > 0 && (
-        <div className="flex justify-center items-center gap-2 mt-8 glass-card liquid-border-lg p-4 glass-elevated">
+        <div className="flex justify-center items-center gap-2 mt-8 border rounded-lg p-4 bg-card">
           <Button
             variant="outline"
             size="sm"
             onClick={() => handlePageChange(pagination.currentPage - 1)}
             disabled={!pagination.hasPrev || isPending}
-            className="liquid-border"
           >
             <ChevronLeft className="h-4 w-4 mr-1" />
             {t("common.previous")}
@@ -228,7 +222,7 @@ export function ChallengesList({ initialChallenges, pagination, currentFilters }
                   size="sm"
                   onClick={() => handlePageChange(pageNum)}
                   disabled={isPending}
-                  className="liquid-border w-10"
+                  className="w-10"
                 >
                   {pageNum}
                 </Button>
@@ -241,7 +235,6 @@ export function ChallengesList({ initialChallenges, pagination, currentFilters }
             size="sm"
             onClick={() => handlePageChange(pagination.currentPage + 1)}
             disabled={!pagination.hasNext || isPending}
-            className="liquid-border"
           >
             {t("common.next")}
             <ChevronRight className="h-4 w-4 ml-1" />

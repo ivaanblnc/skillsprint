@@ -5,7 +5,7 @@ export function createClient() {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    console.error("[v0] Supabase environment variables missing:", {
+    console.error("Supabase environment variables missing:", {
       url: !!supabaseUrl,
       key: !!supabaseAnonKey,
       env: typeof window !== "undefined" ? "client" : "server",

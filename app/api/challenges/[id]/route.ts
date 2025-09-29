@@ -230,8 +230,8 @@ export async function DELETE(
       return NextResponse.json({ message: "Forbidden - Creator access required" }, { status: 403 })
     }
 
-    // Verify the challenge exists and belongs to the user
-    const existingChallenge = await prisma.challenge.findUnique({
+    // Check if challenge exists and belongs to the user
+    const challenge = await prisma.challenge.findUnique({
       where: { 
         id: params.id,
         creatorId: user.id
@@ -245,23 +245,32 @@ export async function DELETE(
       }
     })
 
-    if (!existingChallenge) {
+    if (!challenge) {
       return NextResponse.json({ message: "Challenge not found" }, { status: 404 })
     }
 
-    // Prevent deletion if there are submissions (unless it's a draft)
-    if (existingChallenge.status !== "DRAFT" && existingChallenge._count.submissions > 0) {
+    // Don't allow deletion if challenge has submissions
+    if (challenge._count.submissions > 0) {
       return NextResponse.json({ 
-        message: "Cannot delete challenge with existing submissions. Consider marking it as cancelled instead." 
+        message: "Cannot delete challenge with existing submissions" 
       }, { status: 400 })
     }
 
-    // Delete the challenge (cascade will handle test cases and submissions)
+    // Only allow deletion of DRAFT challenges
+    if (challenge.status !== 'DRAFT') {
+      return NextResponse.json({ 
+        message: "Only draft challenges can be deleted" 
+      }, { status: 400 })
+    }
+
+    // Delete challenge (this will cascade delete related test cases due to schema constraints)
     await prisma.challenge.delete({
       where: { id: params.id }
     })
 
-    return NextResponse.json({ message: "Challenge deleted successfully" })
+    return NextResponse.json({ 
+      message: "Challenge deleted successfully" 
+    })
 
   } catch (error) {
     console.error("Error deleting challenge:", error)

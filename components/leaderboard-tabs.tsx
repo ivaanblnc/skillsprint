@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Trophy, Medal, Award, Crown, Clock, Zap, Target } from "lucide-react"
-import { useTranslations } from "@/lib/i18n"
+import { translate } from "@/lib/i18n-helpers"
 
 interface User {
   id: string
@@ -39,6 +39,7 @@ interface LeaderboardTabsProps {
   recentTopPerformers: User[]
   challengeLeaderboards: ChallengeLeaderboard[]
   currentUserId?: string
+  translations: Record<string, any>
 }
 
 export function LeaderboardTabs({
@@ -46,8 +47,9 @@ export function LeaderboardTabs({
   recentTopPerformers,
   challengeLeaderboards,
   currentUserId,
+  translations,
 }: LeaderboardTabsProps) {
-  const t = useTranslations()
+  const t = (key: string, params?: Record<string, any>) => translate(translations, key, params)
   const getRankIcon = (rank: number) => {
     if (rank === 1) return <Crown className="h-5 w-5 text-yellow-500" />
     if (rank === 2) return <Medal className="h-5 w-5 text-gray-400" />

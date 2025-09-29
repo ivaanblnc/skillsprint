@@ -22,6 +22,8 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+    console.log("Received request body:", JSON.stringify(body, null, 2))
+    
     const {
       title,
       description,
@@ -34,37 +36,88 @@ export async function POST(request: NextRequest) {
       testCases
     } = body
 
-    // Validate required fields
-    if (!title || !description || !difficulty || !points || !timeLimit || !startDate || !endDate || !status) {
-      return NextResponse.json({ message: "Missing required fields" }, { status: 400 })
+    // Validate required fields with detailed logging
+    const missingFields = []
+    if (!title) missingFields.push('title')
+    if (!description) missingFields.push('description')
+    if (!difficulty) missingFields.push('difficulty')
+    if (!points) missingFields.push('points')
+    if (!timeLimit) missingFields.push('timeLimit')
+    if (!startDate) missingFields.push('startDate')
+    if (!endDate) missingFields.push('endDate')
+    if (!status) missingFields.push('status')
+    
+    if (missingFields.length > 0) {
+      console.log("Missing required fields:", missingFields)
+      return NextResponse.json({ 
+        message: `Missing required fields: ${missingFields.join(', ')}` 
+      }, { status: 400 })
     }
 
     // Validate difficulty
     if (!["EASY", "MEDIUM", "HARD"].includes(difficulty)) {
+      console.log("Invalid difficulty:", difficulty)
       return NextResponse.json({ message: "Invalid difficulty level" }, { status: 400 })
     }
 
     // Validate status
     if (!["DRAFT", "ACTIVE"].includes(status)) {
+      console.log("Invalid status:", status)
       return NextResponse.json({ message: "Invalid status" }, { status: 400 })
+    }
+
+    // Validate numeric fields
+    const pointsNum = Number(points)
+    const timeLimitNum = Number(timeLimit)
+    
+    if (isNaN(pointsNum) || pointsNum <= 0) {
+      console.log("Invalid points:", points, "parsed as:", pointsNum)
+      return NextResponse.json({ message: "Points must be a positive number" }, { status: 400 })
+    }
+    
+    if (isNaN(timeLimitNum) || timeLimitNum <= 0) {
+      console.log("Invalid timeLimit:", timeLimit, "parsed as:", timeLimitNum)
+      return NextResponse.json({ message: "Time limit must be a positive number" }, { status: 400 })
     }
 
     // Validate dates
     const start = new Date(startDate)
     const end = new Date(endDate)
     
+    if (isNaN(start.getTime())) {
+      console.log("Invalid start date:", startDate)
+      return NextResponse.json({ message: "Invalid start date" }, { status: 400 })
+    }
+    
+    if (isNaN(end.getTime())) {
+      console.log("Invalid end date:", endDate)
+      return NextResponse.json({ message: "Invalid end date" }, { status: 400 })
+    }
+    
     if (end <= start) {
+      console.log("End date must be after start date. Start:", start, "End:", end)
       return NextResponse.json({ message: "End date must be after start date" }, { status: 400 })
     }
 
     // Validate test cases
     if (!testCases || !Array.isArray(testCases) || testCases.length === 0) {
+      console.log("Invalid test cases:", testCases)
       return NextResponse.json({ message: "At least one test case is required" }, { status: 400 })
     }
 
-    for (const testCase of testCases) {
-      if (!testCase.input || !testCase.expectedOutput) {
-        return NextResponse.json({ message: "All test cases must have input and expected output" }, { status: 400 })
+    for (let i = 0; i < testCases.length; i++) {
+      const testCase = testCases[i]
+      if (!testCase.input || typeof testCase.input !== 'string' || !testCase.input.trim()) {
+        console.log(`Test case ${i + 1} missing input:`, testCase)
+        return NextResponse.json({ 
+          message: `Test case ${i + 1} must have input` 
+        }, { status: 400 })
+      }
+      if (!testCase.expectedOutput || typeof testCase.expectedOutput !== 'string' || !testCase.expectedOutput.trim()) {
+        console.log(`Test case ${i + 1} missing expected output:`, testCase)
+        return NextResponse.json({ 
+          message: `Test case ${i + 1} must have expected output` 
+        }, { status: 400 })
       }
     }
 
@@ -76,8 +129,8 @@ export async function POST(request: NextRequest) {
           title: title.trim(),
           description: description.trim(),
           difficulty,
-          points: parseInt(points),
-          timeLimit: parseInt(timeLimit),
+          points: pointsNum,
+          timeLimit: timeLimitNum,
           startDate: start,
           endDate: end,
           status,
