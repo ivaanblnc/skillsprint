@@ -39,53 +39,53 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
     translate(translations, key, params)
 
   const cardClassName = size === 'compact' 
-    ? "glass-elevated h-auto" 
-    : "glass-elevated h-[320px] hover:glass-elevated-hover transition-all duration-300"
+    ? "glass-elevated" 
+    : "glass-elevated hover:glass-elevated-hover transition-all duration-300 flex flex-col"
 
   return (
     <Card className={cardClassName}>
-      <CardHeader>
-        <div className="flex items-start justify-between mb-3">
-          <CardTitle className="text-lg font-bold leading-tight line-clamp-2">
+      <CardHeader className="pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-3">
+          <CardTitle className="text-base sm:text-lg font-bold leading-tight line-clamp-2 flex-1">
             {challenge.title}
           </CardTitle>
           <Badge
             variant={getBadgeVariant.difficulty(challenge.difficulty)}
-            className="liquid-border text-xs font-medium shrink-0 ml-2"
+            className="liquid-border text-xs font-medium shrink-0 w-fit"
           >
             {t(`challenges.difficulty.${challenge.difficulty.toLowerCase()}`)}
           </Badge>
         </div>
         
-        <CardDescription className="text-sm line-clamp-3 text-pretty">
+        <CardDescription className="text-xs sm:text-sm line-clamp-2 sm:line-clamp-3 text-pretty">
           {challenge.description || t("challenges.noDescription")}
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="flex flex-col justify-between flex-1">
+      <CardContent className="flex flex-col justify-between flex-1 gap-4">
         {/* Challenge Stats */}
-        <div className="flex items-center gap-4 mb-6 text-sm text-muted-foreground">
+        <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground flex-wrap">
           <div className="flex items-center gap-1" title={t("challenges.points")}>
-            <Trophy className="h-4 w-4 text-primary" />
+            <Trophy className="h-4 w-4 text-primary flex-shrink-0" />
             <span className="font-medium">{challenge.points}</span>
           </div>
           
           <div className="flex items-center gap-1" title={t("challenges.timeLimit")}>
-            <Clock className="h-4 w-4 text-primary" />
+            <Clock className="h-4 w-4 text-primary flex-shrink-0" />
             <span className="font-medium">{challenge.timeLimit}min</span>
           </div>
           
           <div className="flex items-center gap-1" title={t("challenges.participants")}>
-            <Users className="h-4 w-4 text-primary" />
+            <Users className="h-4 w-4 text-primary flex-shrink-0" />
             <span className="font-medium">{challenge._count?.submissions || 0}</span>
           </div>
         </div>
 
         {/* Creator and Action */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
           {showCreator && challenge.creator && (
-            <div className="flex items-center gap-2">
-              <Avatar className="h-6 w-6">
+            <div className="flex items-center gap-2 min-w-0">
+              <Avatar className="h-6 w-6 flex-shrink-0">
                 <AvatarImage 
                   src={challenge.creator.image || ""} 
                   alt={challenge.creator.name || "Creator"} 
@@ -94,7 +94,7 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
                   {challenge.creator.name?.charAt(0) || "?"}
                 </AvatarFallback>
               </Avatar>
-              <span className="text-sm text-muted-foreground">
+              <span className="text-xs sm:text-sm text-muted-foreground truncate">
                 {challenge.creator.name || t("challenges.anonymous")}
               </span>
             </div>
@@ -106,12 +106,12 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
             </div>
           )}
 
-          <Link href={`/challenges/${challenge.id}`}>
+          <Link href={`/challenges/${challenge.id}`} className="w-full sm:w-auto">
             <Button 
               size={size === 'compact' ? 'sm' : 'default'} 
-              className="liquid-border group"
+              className="liquid-border group w-full sm:w-auto"
             >
-              {size === 'compact' ? t("challenges.view") : t("challenges.startChallenge")}
+              {size === 'compact' ? t("challenges.view") : t("challenges.details.viewDetails")}
               <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </Button>
           </Link>

@@ -10,6 +10,7 @@ import { ChallengeDetailClient } from "./challenge-detail-client"
 import { Suspense } from "react"
 import { ChallengeDetailSkeleton } from "@/components/ui/challenge-detail-skeleton"
 import { createChallengeDetailService } from "@/lib/services/challenge-detail.service"
+import { prisma } from "@/lib/prisma"
 
 // Revalidate this page every 30 seconds to show updated submission statuses
 export const revalidate = 30
@@ -27,7 +28,14 @@ async function getUserIfAuthenticated() {
       return null
     }
     
-    return user
+    // Find the user in Prisma DB by email
+    const dbUser = await prisma.user.findUnique({
+      where: { email: user.email || '' },
+      select: { id: true, role: true }
+    })
+
+    // Return the Prisma user ID (CUID) and role, not the Supabase Auth ID (UUID)
+    return dbUser ? { id: dbUser.id, role: dbUser.role } : null
   } catch (error) {
     console.error("Error getting user:", error)
     return null
@@ -39,14 +47,16 @@ async function getUserIfAuthenticated() {
  * Maneja carga de datos y SSR
  */
 export default async function ChallengeDetailPage({ params }: ChallengeDetailPageProps) {
-  // Get authenticated user
-  const authUser = await getUserIfAuthenticated()
+  // Get authenticated user (Prisma User ID and role)
+  const authData = await getUserIfAuthenticated()
+  const userId = authData?.id || null
+  const userRole = authData?.role || null
   
   // Get challenge data
   const supabase = await createServerClient()
   const challengeDetailService = createChallengeDetailService(supabase)
   
-  const result = await challengeDetailService.getChallengeDetail(params.id, authUser?.id)
+  const result = await challengeDetailService.getChallengeDetail(params.id, userId)
   
   if (!result.success || !result.data) {
     notFound()
@@ -59,7 +69,7 @@ export default async function ChallengeDetailPage({ params }: ChallengeDetailPag
     <Suspense fallback={<ChallengeDetailSkeleton />}>
       <ChallengeDetailClient
         challenge={result.data}
-        authUser={authUser}
+        authUser={userId ? { id: userId, role: userRole } as any : null}
         translations={messages}
       />
     </Suspense>

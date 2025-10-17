@@ -12,13 +12,13 @@ interface PageProps {
 }
 
 async function getChallengeSubmissions(challengeId: string, userId: string, page = 1, status?: string, userFilter?: string) {
-  const pageSize = 10 // Reducir el tamaño de página
+  const pageSize = 6 // 6 submissions per page
   const skip = (page - 1) * pageSize
 
   // Verify user has access to this challenge
   const challenge = await prisma.challenge.findUnique({
     where: { id: challengeId, creatorId: userId },
-    select: { id: true, title: true, status: true }
+    select: { id: true, title: true, status: true, points: true }
   })
 
   if (!challenge) {

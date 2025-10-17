@@ -12,6 +12,7 @@ import { ChallengeSubmitClient } from "./challenge-submit-client"
 import { Suspense } from "react"
 import { ChallengeSubmitSkeleton } from "@/components/ui/challenge-submit-skeleton"
 import { createChallengeDetailService } from "@/lib/services/challenge-detail.service"
+import { prisma } from "@/lib/prisma"
 
 interface Props {
   params: { id: string }
@@ -32,11 +33,21 @@ export default async function ChallengeSubmitPage({ params }: Props) {
       redirect("/auth/login")
     }
 
+    // Find the user in Prisma DB by email to get the correct user ID
+    const dbUser = await prisma.user.findUnique({
+      where: { email: user.email || '' },
+      select: { id: true }
+    })
+
+    if (!dbUser) {
+      redirect("/auth/login")
+    }
+
     // Create services
     const challengeService = createChallengeDetailService(supabase)
 
-    // Load challenge data 
-    const challengeResult = await challengeService.getChallengeDetail(params.id, user.id)
+    // Load challenge data with the correct Prisma user ID
+    const challengeResult = await challengeService.getChallengeDetail(params.id, dbUser.id)
 
     if (!challengeResult.success || !challengeResult.data) {
       notFound()
@@ -54,6 +65,11 @@ export default async function ChallengeSubmitPage({ params }: Props) {
       redirect(`/challenges/${params.id}`)
     }
 
+    // Check if user already has a submission - if so, redirect to challenge detail
+    if (challenge.userSubmission) {
+      redirect(`/challenges/${params.id}`)
+    }
+
     // Get translations
     const messages = await getMessages()
 
@@ -61,7 +77,7 @@ export default async function ChallengeSubmitPage({ params }: Props) {
       <Suspense fallback={<ChallengeSubmitSkeleton />}>
         <ChallengeSubmitClient
           challenge={challenge as any}
-          userId={user.id}
+          userId={dbUser.id}
           translations={messages}
         />
       </Suspense>

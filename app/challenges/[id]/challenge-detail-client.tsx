@@ -45,8 +45,8 @@ function translate(translations: Record<string, any>, key: string, params?: Reco
 
 // Component Props Interface
 interface ChallengeDetailClientProps {
-  challenge: ChallengeDetail
-  authUser: SupabaseUser | null
+  challenge: ChallengeDetail | null
+  authUser: { id: string; role?: string | null } | null
   translations: Record<string, any>
 }
 
@@ -104,19 +104,19 @@ const LeaderboardEntry: React.FC<{
   }
 
   return (
-    <div className={`flex items-center justify-between p-3 rounded-lg ${
+    <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 p-3 rounded-lg ${
       isCurrentUser ? 'bg-primary/10 border border-primary/20' : 'hover:bg-muted/50'
     }`}>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 min-w-0">
         {getRankIcon(index + 1)}
-        <Avatar className="h-8 w-8">
+        <Avatar className="h-8 w-8 flex-shrink-0">
           <AvatarImage src={entry.user.image || ""} alt={entry.user.name || "User"} />
           <AvatarFallback>
             {entry.user.name?.charAt(0) || "U"}
           </AvatarFallback>
         </Avatar>
-        <div>
-          <p className="font-medium text-sm">
+        <div className="min-w-0">
+          <p className="font-medium text-sm line-clamp-1">
             {entry.user.name || t("challenge.anonymousUser")}
             {isCurrentUser && (
               <Badge variant="outline" className="ml-2 text-xs">
@@ -129,8 +129,8 @@ const LeaderboardEntry: React.FC<{
           </p>
         </div>
       </div>
-      <div className="text-right">
-        <div className="font-semibold">{entry.score}/100</div>
+      <div className="text-right flex-shrink-0">
+        <div className="font-semibold text-sm">{entry.score}/100</div>
         {entry.executionTime && (
           <div className="text-xs text-muted-foreground">
             {formatDuration(entry.executionTime)}
@@ -152,9 +152,26 @@ export const ChallengeDetailClient: React.FC<ChallengeDetailClientProps> = ({
   const t = (key: string, params?: Record<string, string>) => 
     translate(translations, key, params)
 
+  // Guard clause: if no challenge, show not found
+  if (!challenge) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-2">{t("challenge.notFound") || "Desafío no encontrado"}</h1>
+          <Link href="/challenges" className="text-primary hover:underline">
+            {t("challenge.backToChallenges") || "Volver a desafíos"}
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
   const isAuthenticated = !!authUser
-  const canSubmit = isAuthenticated && challenge.status === "ACTIVE"
-  const canManage = challenge.isCreator
+  const userRole = authUser?.role as 'USER' | 'CREATOR' | null
+  const isCreator = userRole === 'CREATOR'
+  const canSubmit = isAuthenticated && challenge.status === "ACTIVE" && !challenge.isCreator
+  // Solo creadores pueden ver envíos, y solo si el desafío es suyo
+  const canViewSubmissions = isCreator && challenge.isCreator
 
   const formatTimeRemaining = () => {
     if (challenge.status !== "ACTIVE") return null
@@ -219,34 +236,30 @@ export const ChallengeDetailClient: React.FC<ChallengeDetailClientProps> = ({
               </div>
 
               <div className="flex gap-2">
-                {canManage && (
-                  <>
-                    <Link href={`/challenges/${challenge.id}/analytics`}>
-                      <Button variant="outline" size="sm">
-                        <BarChart3 className="h-4 w-4 mr-2" />
-                        {t("challenge.analytics")}
-                      </Button>
-                    </Link>
-                    <Link href={`/challenges/${challenge.id}/settings`}>
-                      <Button variant="outline" size="sm">
-                        <Settings className="h-4 w-4 mr-2" />
-                        {t("challenge.settings")}
-                      </Button>
-                    </Link>
-                  </>
-                )}
-                
-                {canSubmit ? (
+                {/* Si es creador del desafío: mostrar botón de ver envíos */}
+                {canViewSubmissions ? (
+                  <Link href={`/challenges/${challenge.id}/submissions`}>
+                    <Button>
+                      <BarChart3 className="h-4 w-4 mr-2" />
+                      {t("challenge.viewSubmissions")}
+                    </Button>
+                  </Link>
+                ) : !isCreator && canSubmit && !challenge.userSubmission ? (
+                  // Si es PARTICIPANTE sin envío previo: mostrar "Comenzar Desafío"
                   <Link href={`/challenges/${challenge.id}/submit`}>
                     <Button>
                       <Play className="h-4 w-4 mr-2" />
-                      {challenge.userSubmission 
-                        ? t("challenge.resubmit")
-                        : t("challenge.startChallenge")
-                      }
+                      {t("challenge.startChallenge")}
                     </Button>
                   </Link>
+                ) : !isCreator && challenge.userSubmission ? (
+                  // Si es PARTICIPANTE con envío previo: no mostrar botón, solo ver card "Tu Envío"
+                  <Button disabled className="opacity-50">
+                    <Eye className="h-4 w-4 mr-2" />
+                    {t("challenge.viewOnly")}
+                  </Button>
                 ) : !isAuthenticated ? (
+                  // Si no está autenticado
                   <AuthRequiredTrigger>
                     <Button>
                       <Play className="h-4 w-4 mr-2" />
@@ -254,6 +267,7 @@ export const ChallengeDetailClient: React.FC<ChallengeDetailClientProps> = ({
                     </Button>
                   </AuthRequiredTrigger>
                 ) : (
+                  // Desafío no activo, creador de desafío sin permisos, o sin envío
                   <Button disabled>
                     <Eye className="h-4 w-4 mr-2" />
                     {t("challenge.viewOnly")}
@@ -280,57 +294,45 @@ export const ChallengeDetailClient: React.FC<ChallengeDetailClientProps> = ({
             </Card>
           )}
 
-          <div className="grid lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
             {/* Main Content */}
-            <div className="lg:col-span-2 space-y-8">
+            <div className="lg:col-span-2 space-y-4 lg:space-y-8 flex flex-col" style={{minHeight: 'auto'}}>
               {/* Description */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-lg lg:text-xl">
                     <Target className="h-5 w-5 text-primary" />
                     {t("challenge.description")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="prose prose-sm max-w-none">
-                    <p className="whitespace-pre-wrap">{challenge.description}</p>
+                  <div className="prose prose-sm max-w-none max-h-48 lg:max-h-64 overflow-y-auto">
+                    <p className="whitespace-pre-wrap text-sm lg:text-base">{challenge.description}</p>
                   </div>
                 </CardContent>
               </Card>
 
               {/* Test Cases */}
-              <Card>
+              <Card className="flex-1 flex flex-col">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-lg lg:text-xl">
                     <Code2 className="h-5 w-5 text-primary" />
                     {t("challenge.testCases")}
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-sm lg:text-base">
                     {t("challenge.testCasesDescription")}
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {challenge.testCases
-                      .filter(tc => tc.isPublic)
-                      .slice(0, 3)
-                      .map((testCase, index) => (
-                        <TestCaseCard 
-                          key={testCase.id} 
-                          testCase={testCase} 
-                          index={index}
-                          t={t}
-                        />
-                      ))
-                    }
-                    
+                <CardContent className="flex-1 flex flex-col justify-between">
+                  <div className="space-y-4 max-h-96 lg:max-h-full overflow-y-auto">
+                    {challenge.testCases.filter(tc => tc.isPublic).slice(0, 3).map((testCase, index) => (
+                      <TestCaseCard key={testCase.id} testCase={testCase} index={index} t={t} />
+                    ))}
                     {challenge.testCases.filter(tc => !tc.isPublic).length > 0 && (
                       <div className="text-center p-4 border-2 border-dashed border-muted rounded-lg">
                         <AlertCircle className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
                         <p className="text-sm text-muted-foreground">
-                          {t("challenge.hiddenTestCases", {
-                            count: challenge.testCases.filter(tc => !tc.isPublic).length.toString()
-                          })}
+                          {t("challenge.hiddenTestCases", { count: challenge.testCases.filter(tc => !tc.isPublic).length.toString() })}
                         </p>
                       </div>
                     )}
@@ -340,11 +342,11 @@ export const ChallengeDetailClient: React.FC<ChallengeDetailClientProps> = ({
             </div>
 
             {/* Sidebar */}
-            <div className="space-y-6">
+            <div className="space-y-4 lg:space-y-6 flex flex-col" style={{minHeight: 'auto'}}>
               {/* Creator Info */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">{t("challenge.createdBy")}</CardTitle>
+                  <CardTitle className="text-base lg:text-lg">{t("challenge.createdBy")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center gap-3">
@@ -369,42 +371,48 @@ export const ChallengeDetailClient: React.FC<ChallengeDetailClientProps> = ({
                 </CardContent>
               </Card>
 
-              {/* User Submission Status */}
-              {challenge.userSubmission && (
+              {/* User Submission Status - Solo para PARTICIPANTES (no creadores) */}
+              {!isCreator && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg">{t("challenge.yourSubmission")}</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">{t("challenge.status")}</span>
-                        <Badge variant={getBadgeVariant.status(challenge.userSubmission.status)}>
-                          {t(`submission.status.${challenge.userSubmission.status.toLowerCase()}`)}
-                        </Badge>
-                      </div>
-                      
-                      {challenge.userSubmission.score !== null && (
+                    {challenge.userSubmission ? (
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-muted-foreground">{t("challenge.status")}</span>
+                          <Badge variant={getBadgeVariant.status(challenge.userSubmission.status)}>
+                            {t(`submission.status.${challenge.userSubmission.status.toLowerCase()}`)}
+                          </Badge>
+                        </div>
                         <div className="flex justify-between">
                           <span className="text-sm text-muted-foreground">{t("challenge.score")}</span>
-                          <span className="font-medium">{challenge.userSubmission.score}/100</span>
+                          {challenge.userSubmission.score !== null && challenge.userSubmission.score !== undefined ? (
+                            <span className="font-medium text-lg">{challenge.userSubmission.score}/100</span>
+                          ) : (
+                            <span className="text-sm text-muted-foreground italic">{t("challenge.pendingGrading") || "Pendiente de calificación"}</span>
+                          )}
                         </div>
-                      )}
-                      
-                      <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">{t("challenge.submitted")}</span>
-                        <span className="text-sm">{formatDate.short(challenge.userSubmission.submittedAt)}</span>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-muted-foreground">{t("challenge.submitted")}</span>
+                          <span className="text-sm">{formatDate.short(challenge.userSubmission.submittedAt)}</span>
+                        </div>
                       </div>
-                      
-                      <Separator />
-                      
-                      <Link href={`/challenges/${challenge.id}/submissions`} className="block">
-                        <Button variant="outline" size="sm" className="w-full">
-                          <Eye className="h-4 w-4 mr-2" />
-                          {t("challenge.viewSubmission")}
-                        </Button>
-                      </Link>
-                    </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center min-h-[120px] text-center gap-2">
+                        <AlertCircle className="h-8 w-8 text-muted-foreground mb-2" />
+                        <p className="text-sm text-muted-foreground">{t("challenge.noSubmission")}</p>
+                        {canSubmit && (
+                          <Link href={`/challenges/${challenge.id}/submit`}>
+                            <Button size="sm" className="mt-2">
+                              <Play className="h-4 w-4 mr-2" />
+                              {t("challenge.startChallenge")}
+                            </Button>
+                          </Link>
+                        )}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               )}

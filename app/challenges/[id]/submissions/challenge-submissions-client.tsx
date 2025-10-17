@@ -34,10 +34,11 @@ interface Challenge {
   id: string
   title: string
   status: string
+  points?: number
 }
 
 interface ChallengeSubmissionsClientProps {
-  challenge: Challenge
+  challenge: Challenge & { points?: number }
   submissions: Submission[]
   totalCount: number
   currentPage: number
@@ -71,7 +72,13 @@ const SubmissionCard: React.FC<{
   submission: Submission
   t: (key: string, params?: Record<string, any>) => string
   onViewDetails: (submissionId: string) => void
-}> = ({ submission, t, onViewDetails }) => {
+  onGradeSubmission?: (submissionId: string, status: string, score: number) => void
+  maxPoints?: number
+}> = ({ submission, t, onViewDetails, onGradeSubmission, maxPoints = 100 }) => {
+  const [isGrading, setIsGrading] = React.useState(false)
+  const [gradeScore, setGradeScore] = React.useState(submission.score?.toString() || '0')
+  const [gradeStatus, setGradeStatus] = React.useState<string>(submission.status)
+
   const getStatusVariant = (status: string) => {
     switch (status) {
       case "ACCEPTED": return "default"
@@ -86,8 +93,25 @@ const SubmissionCard: React.FC<{
       case "ACCEPTED": return <CheckCircle className="h-4 w-4" />
       case "REJECTED": return <XCircle className="h-4 w-4" />
       case "PENDING": return <Clock className="h-4 w-4" />
-     
       default: return <Clock className="h-4 w-4" />
+    }
+  }
+
+  const handleGradeSubmit = async () => {
+    if (!onGradeSubmission) return
+    
+    const score = parseInt(gradeScore) || 0
+    
+    // Validar que no exceda los puntos máximos
+    if (score > maxPoints) {
+      return
+    }
+    
+    setIsGrading(true)
+    try {
+      await onGradeSubmission(submission.id, gradeStatus, score)
+    } finally {
+      setIsGrading(false)
     }
   }
 
@@ -116,11 +140,11 @@ const SubmissionCard: React.FC<{
           </Badge>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
           <div>
             <p className="text-muted-foreground">{t("submissions.score")}</p>
             <p className="font-medium">
-              {submission.score !== null ? `${submission.score}%` : t("submissions.notGraded")}
+              {submission.score !== null ? `${submission.score}/100` : t("submissions.notGraded")}
             </p>
           </div>
           <div>
@@ -129,7 +153,95 @@ const SubmissionCard: React.FC<{
               {t(`submissions.status.${submission.status.toLowerCase()}`)}
             </p>
           </div>
-          <div className="flex justify-end">
+        </div>
+
+        {/* Grading Section */}
+        {onGradeSubmission && submission.status === 'PENDING' && (
+          <div className="border-t pt-4 mt-4 space-y-3">
+            <p className="text-sm font-medium text-muted-foreground">{t("submissions.reviewSubmission")}</p>
+            
+            <div className="grid grid-cols-2 gap-3">
+              {/* Score Input */}
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">{t("submissions.scoreLabel")}</label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    min="0"
+                    max={maxPoints}
+                    value={gradeScore}
+                    onChange={(e) => {
+                      // Solo permitir números y punto decimal
+                      const inputValue = e.target.value
+                      // Si está vacío, dejar que sea vacío
+                      if (inputValue === '') {
+                        setGradeScore('')
+                        return
+                      }
+                      // Solo números (sin punto decimal en este caso)
+                      if (/^\d+$/.test(inputValue)) {
+                        const val = parseInt(inputValue)
+                        if (val <= maxPoints) {
+                          setGradeScore(inputValue)
+                        }
+                      }
+                    }}
+                    onKeyPress={(e) => {
+                      // Solo permitir dígitos
+                      if (!/[0-9]/.test(e.key)) {
+                        e.preventDefault()
+                      }
+                    }}
+                    className="h-8"
+                    disabled={isGrading}
+                  />
+                  <span className="text-xs text-muted-foreground">/{maxPoints}</span>
+                </div>
+              </div>
+
+              {/* Status Select */}
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">{t("submissions.status.label")}</label>
+                <Select value={gradeStatus} onValueChange={setGradeStatus} disabled={isGrading}>
+                  <SelectTrigger className="h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="PENDING">Pendiente</SelectItem>
+                    <SelectItem value="ACCEPTED">Aceptado</SelectItem>
+                    <SelectItem value="REJECTED">Rechazado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <Button 
+                size="sm"
+                variant="default"
+                className="flex-1"
+                onClick={handleGradeSubmit}
+                disabled={isGrading}
+              >
+                {isGrading ? t("common.saving") : t("submissions.acceptSubmission")}
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="flex-1"
+                onClick={() => onViewDetails(submission.id)}
+              >
+                <Eye className="h-4 w-4 mr-1" />
+                {t("submissions.viewDetails")}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* View Details Button (when already graded or not grading) */}
+        {!onGradeSubmission || submission.status !== 'PENDING' ? (
+          <div className="flex justify-end pt-4 border-t">
             <Button 
               variant="outline" 
               size="sm"
@@ -139,7 +251,7 @@ const SubmissionCard: React.FC<{
               {t("submissions.viewDetails")}
             </Button>
           </div>
-        </div>
+        ) : null}
       </CardContent>
     </Card>
   )
@@ -191,6 +303,27 @@ export function ChallengeSubmissionsClient({
     const params = new URLSearchParams(searchParams.toString())
     params.set('page', page.toString())
     router.push(`${window.location.pathname}?${params.toString()}`)
+  }
+
+  const handleGradeSubmission = async (submissionId: string, status: string, score: number) => {
+    try {
+      const response = await fetch(`/api/submissions/${submissionId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status, score })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        console.error('Error grading:', error)
+        return
+      }
+
+      // Refresh the page to show updated submission
+      router.refresh()
+    } catch (error) {
+      console.error('Error grading submission:', error)
+    }
   }
 
   return (
@@ -270,22 +403,22 @@ export function ChallengeSubmissionsClient({
                     submission={submission}
                     t={t}
                     onViewDetails={handleViewDetails}
+                    onGradeSubmission={handleGradeSubmission}
+                    maxPoints={challenge.points || 100}
                   />
                 ))}
               </div>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex justify-center mt-8">
-                  <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    hasNext={currentPage < totalPages}
-                    hasPrev={currentPage > 1}
-                    onPageChange={handlePageChange}
-                  />
-                </div>
-              )}
+              {/* Pagination - Siempre visible */}
+              <div className="flex justify-center mt-8">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={Math.max(1, totalPages)}
+                  onPageChange={handlePageChange}
+                  hasNext={currentPage < totalPages}
+                  hasPrev={currentPage > 1}
+                />
+              </div>
             </div>
           ) : (
             <Card>

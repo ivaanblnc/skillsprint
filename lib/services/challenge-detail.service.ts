@@ -20,7 +20,7 @@ export class ChallengeDetailService {
   /**
    * Obtiene detalles completos de un challenge
    */
-  async getChallengeDetail(challengeId: string, userId?: string): Promise<{
+  async getChallengeDetail(challengeId: string, userId?: string | null): Promise<{
     success: boolean
     data?: ChallengeDetail
     error?: string
@@ -50,7 +50,7 @@ export class ChallengeDetailService {
         }
       }
 
-      const challenge = await prisma.challenge.findUnique({
+      const challenge = await prisma.challenge.findFirst({
         where: whereCondition,
         include: {
           creator: {
@@ -105,13 +105,25 @@ export class ChallengeDetailService {
         }
       }) : []
 
+      const { submissions: submissionsFromPrisma, _count, ...challengeData } = challenge
+
       const result: ChallengeDetail = {
-        ...challenge,
+        ...challengeData,
         creator: challenge.creator,
         testCases: challenge.testCases,
         userSubmission: challenge.submissions?.[0] ? {
-          ...challenge.submissions[0],
-          challenge: challenge
+          id: challenge.submissions[0].id,
+          challengeId: challenge.submissions[0].challengeId,
+          userId: challenge.submissions[0].userId,
+          code: challenge.submissions[0].code,
+          language: challenge.submissions[0].language,
+          status: challenge.submissions[0].status,
+          score: challenge.submissions[0].score,
+          submittedAt: challenge.submissions[0].submittedAt,
+          challenge: {
+            title: challenge.title,
+            difficulty: challenge.difficulty
+          }
         } : null,
         isCreator: userId === challenge.creatorId,
         canEdit: userId === challenge.creatorId || userRole === "CREATOR",

@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { 
-  ArrowLeft, Settings, Trash2, AlertTriangle, Users
+  ArrowLeft, Settings, Trash2, AlertTriangle
 } from "lucide-react"
 import { DashboardNav } from "@/components/dashboard-nav"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
@@ -159,11 +159,11 @@ export function ChallengeSettingsClient({
           {/* Header */}
           <div className="mb-8">
             <Link 
-              href={`/challenges/${challenge.id}/edit`}
+              href={`/challenges/manage`}
               className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-4"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              {t("settings.backToEdit")}
+              {t("settings.backToChallenges")}
             </Link>
             
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -172,17 +172,6 @@ export function ChallengeSettingsClient({
                 <p className="text-muted-foreground">
                   {t("settings.manageChallengeSettings")}
                 </p>
-              </div>
-              
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => router.push(`/challenges/${challenge.id}/submissions`)}
-                >
-                  <Users className="h-4 w-4 mr-2" />
-                  {t("settings.viewSubmissions")}
-                </Button>
               </div>
             </div>
           </div>
