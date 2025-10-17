@@ -222,6 +222,41 @@ export const ChallengeSubmitClient: React.FC<ChallengeSubmitClientProps> = ({
   const [success, setSuccess] = useState<string | null>(null)
   const [timeRemaining, setTimeRemaining] = useState(challenge.timeLimit * 60) // Convert to seconds
 
+  // Refs for tracking flags without recreating interval
+  const alertedOneMinuteRef = useRef(false)
+  const didAutoSubmitRef = useRef(false)
+  const timeRemainingRef = useRef(challenge.timeLimit * 60)
+  const codeRef = useRef('')
+  const fileRef = useRef<File | null>(null)
+  const submitModeRef = useRef<'code' | 'file'>('code')
+  const handleSubmitCodeRef = useRef<typeof handleSubmitCode | null>(null)
+  const handleSubmitFileRef = useRef<typeof handleSubmitFile | null>(null)
+
+  // Toast effect - separate to avoid closure issues
+  React.useEffect(() => {
+    if (timeRemaining === 60 && !alertedOneMinuteRef.current) {
+      alertedOneMinuteRef.current = true
+      console.log('🔔 Toast triggered at 60 seconds')
+      toast({
+        title: t('submit.timeAlmostUpTitle') || 'Time nearly up',
+        description: t('submit.timeAlmostUpDesc') || '1 minute remaining',
+      })
+    }
+  }, [timeRemaining, t, toast])
+
+  // Sync refs with state
+  React.useEffect(() => {
+    codeRef.current = code
+  }, [code])
+
+  React.useEffect(() => {
+    fileRef.current = file
+  }, [file])
+
+  React.useEffect(() => {
+    submitModeRef.current = submitMode
+  }, [submitMode])
+
   // Validations
   const hasContent = submitMode === 'code' ? code.trim().length > 0 : file !== null
 
@@ -262,7 +297,7 @@ export const ChallengeSubmitClient: React.FC<ChallengeSubmitClientProps> = ({
       
       setTimeout(() => {
         router.refresh()
-        router.push(`/challenges/${challenge.id}/submissions`)
+        router.push(`/challenges`)
       }, 1500)
     } catch (err) {
       setError(t("submit.submitSolutionError"))
@@ -306,7 +341,7 @@ export const ChallengeSubmitClient: React.FC<ChallengeSubmitClientProps> = ({
       
       setTimeout(() => {
         router.refresh()
-        router.push(`/challenges/${challenge.id}/submissions`)
+        router.push(`/challenges`)
       }, 1500)
     } catch (err) {
       setError(t("submit.submitSolutionError"))
@@ -316,56 +351,58 @@ export const ChallengeSubmitClient: React.FC<ChallengeSubmitClientProps> = ({
     }
   }, [file, challenge.id, userId, router, t])
 
+  // Store handlers in refs for use in timer effect
+  React.useEffect(() => {
+    handleSubmitCodeRef.current = handleSubmitCode
+  }, [handleSubmitCode])
+
+  React.useEffect(() => {
+    handleSubmitFileRef.current = handleSubmitFile
+  }, [handleSubmitFile])
+
   // Timer effect (placed after handlers to allow calling them)
   React.useEffect(() => {
-    let alertedOneMinute = false
-    let didAutoSubmit = false
-
-    const tick = async () => {
-      setTimeRemaining(prev => prev - 1)
-    }
-
-    const interval = setInterval(async () => {
-      setTimeRemaining(prev => {
-        const next = prev - 1
-        return next
-      })
+    console.log('Timer effect mounted')
+    
+    const interval = setInterval(() => {
+      timeRemainingRef.current -= 1
+      const next = timeRemainingRef.current
+      
+      console.log('Timer tick:', next)
+      
+      // Update display every tick
+      setTimeRemaining(next)
+      
+      // Toast at 60 seconds - REMOVED, now in separate effect
+      
+      // Stop at 0 and auto-submit
+      if (next <= 0 && !didAutoSubmitRef.current) {
+        didAutoSubmitRef.current = true
+        console.log('⏹️ Time reached 0, attempting auto-submit')
+        console.log('Submit mode:', submitModeRef.current, 'Code:', codeRef.current.length, 'File:', !!fileRef.current)
+        
+        // Trigger auto-submit in the next tick
+        setTimeout(() => {
+          if (submitModeRef.current === 'code' && codeRef.current.trim()) {
+            console.log('Auto-submitting code')
+            handleSubmitCodeRef.current?.()
+          } else if (submitModeRef.current === 'file' && fileRef.current) {
+            console.log('Auto-submitting file')
+            handleSubmitFileRef.current?.()
+          } else {
+            console.log('No content to submit')
+          }
+        }, 0)
+        
+        clearInterval(interval) // Stop the interval at 0
+      }
     }, 1000)
 
-    // Watcher effect: separately check thresholds in another interval to avoid stale closures
-    const watcher = setInterval(async () => {
-      try {
-        if (timeRemaining === 60 && !alertedOneMinute) {
-          alertedOneMinute = true
-          toast({
-            title: t('submit.timeAlmostUpTitle') || 'Time nearly up',
-            description: t('submit.timeAlmostUpDesc') || '1 minute remaining',
-          })
-        }
-
-        if (timeRemaining <= 0 && !didAutoSubmit) {
-          didAutoSubmit = true
-          // perform auto-submit based on current submitMode
-          try {
-            if (submitMode === 'code') {
-              if (code.trim()) await handleSubmitCode()
-            } else {
-              if (file) await handleSubmitFile()
-            }
-          } catch (err) {
-            console.error('Auto-submit failed', err)
-          }
-        }
-      } catch (err) {
-        console.error('Watcher error', err)
-      }
-    }, 500)
-
     return () => {
+      console.log('Timer effect unmounted')
       clearInterval(interval)
-      clearInterval(watcher)
     }
-  }, [timeRemaining, submitMode, code, file, toast, handleSubmitCode, handleSubmitFile, t])
+  }, [])
 
   /**
    * Handle save as draft

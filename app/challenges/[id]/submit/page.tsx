@@ -55,6 +55,11 @@ export default async function ChallengeSubmitPage({ params }: Props) {
 
     const challenge = challengeResult.data
 
+    // Check if user is the creator - creators cannot submit to their own challenges
+    if (challenge.creatorId === dbUser.id) {
+      redirect(`/challenges/${params.id}`)
+    }
+
     // Check if challenge is active and user can submit
     if (challenge.status !== 'ACTIVE') {
       redirect(`/challenges/${params.id}`)
