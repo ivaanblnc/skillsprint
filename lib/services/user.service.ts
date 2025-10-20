@@ -21,11 +21,17 @@ export class UserService {
           role: true,
           points: true,
           image: true,
-          createdAt: true
+          createdAt: true,
+          accounts: {
+            select: {
+              provider: true,
+              type: true
+            }
+          }
         }
       })
 
-      return user
+      return user as any
     } catch (error) {
       console.error('Error fetching user profile:', error)
       return null

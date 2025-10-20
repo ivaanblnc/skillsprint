@@ -169,8 +169,15 @@ export const ChallengeDetailClient: React.FC<ChallengeDetailClientProps> = ({
   const isAuthenticated = !!authUser
   const userRole = authUser?.role as 'USER' | 'CREATOR' | null
   const isCreator = userRole === 'CREATOR'
-  const canSubmit = isAuthenticated && challenge.status === "ACTIVE" && !challenge.isCreator
-  // Solo creadores pueden ver envíos, y solo si el desafío es suyo
+  // Permitir participar si:
+  // - Es PARTICIPANTE, O
+  // - Es CREADOR pero NO es el creador de este desafío
+  const canParticipate = isAuthenticated && 
+    challenge.status === "ACTIVE" && 
+    (!isCreator || (isCreator && !challenge.isCreator))
+  
+  const canSubmit = canParticipate && !challenge.userSubmission
+  // Solo creadores que crearon el desafío pueden ver envíos
   const canViewSubmissions = isCreator && challenge.isCreator
 
   const formatTimeRemaining = () => {
@@ -244,16 +251,16 @@ export const ChallengeDetailClient: React.FC<ChallengeDetailClientProps> = ({
                       {t("challenge.viewSubmissions")}
                     </Button>
                   </Link>
-                ) : !isCreator && canSubmit && !challenge.userSubmission ? (
-                  // Si es PARTICIPANTE sin envío previo: mostrar "Comenzar Desafío"
+                ) : canSubmit ? (
+                  // Si puede participar sin envío previo: mostrar "Comenzar Desafío"
                   <Link href={`/challenges/${challenge.id}/submit`}>
                     <Button>
                       <Play className="h-4 w-4 mr-2" />
                       {t("challenge.startChallenge")}
                     </Button>
                   </Link>
-                ) : !isCreator && challenge.userSubmission ? (
-                  // Si es PARTICIPANTE con envío previo: no mostrar botón, solo ver card "Tu Envío"
+                ) : canParticipate && challenge.userSubmission ? (
+                  // Si puede participar pero ya envió: ver solo
                   <Button disabled className="opacity-50">
                     <Eye className="h-4 w-4 mr-2" />
                     {t("challenge.viewOnly")}
@@ -267,7 +274,7 @@ export const ChallengeDetailClient: React.FC<ChallengeDetailClientProps> = ({
                     </Button>
                   </AuthRequiredTrigger>
                 ) : (
-                  // Desafío no activo, creador de desafío sin permisos, o sin envío
+                  // Desafío no activo o sin permisos
                   <Button disabled>
                     <Eye className="h-4 w-4 mr-2" />
                     {t("challenge.viewOnly")}
@@ -371,8 +378,8 @@ export const ChallengeDetailClient: React.FC<ChallengeDetailClientProps> = ({
                 </CardContent>
               </Card>
 
-              {/* User Submission Status - Solo para PARTICIPANTES (no creadores) */}
-              {!isCreator && (
+              {/* User Submission Status - Para usuarios que pueden participar */}
+              {canParticipate && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg">{t("challenge.yourSubmission")}</CardTitle>

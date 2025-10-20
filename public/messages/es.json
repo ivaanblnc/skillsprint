@@ -125,6 +125,8 @@
       "improveSolution": "Mejorar Solución",
       "startCoding": "Comenzar a Programar"
     },
+    "noChallenges": "No hay desafíos disponibles",
+    "createFirstChallenge": "¡Crea tu primer desafío para comenzar!",
     "noChallengesFound": "No se encontraron desafíos",
     "tryAdjustingFilters": "Intenta ajustar tus filtros o términos de búsqueda",
     "checkBackLater": "¡Vuelve más tarde para ver nuevos desafíos!",
@@ -617,7 +619,14 @@
     "completedChallengesLabel": "Desafíos Completados",
     "totalPointsLabel": "Puntos Totales",
     "startParticipating": "¡Comienza a participar en desafíos!",
-    "description": "Gestiona tu información personal y revisa tu progreso"
+    "description": "Gestiona tu información personal y revisa tu progreso",
+    "errors": {
+      "nameRequired": "El nombre es obligatorio",
+      "emailRequired": "El correo electrónico es obligatorio",
+      "emailInvalid": "Por favor ingresa un correo electrónico válido",
+      "fixErrors": "Por favor corrige los errores arriba",
+      "updateFailed": "Error al actualizar el perfil"
+    }
   },
   "auth": {
     "signIn": "Iniciar Sesión",
@@ -649,6 +658,13 @@
     "createAccountDesc": "Únete a la comunidad de desarrolladores",
     "joinSkillSprint": "Únete a SkillSprint",
     "createAccountStart": "Crea tu cuenta para comenzar",
+    "signingIn": "Iniciando sesión...",
+    "sendingLink": "Enviando enlace...",
+    "checkEmailForLink": "Revisa tu correo para el enlace de inicio de sesión",
+    "orSignInWith": "O continuar con",
+    "cannotChangeOAuthEmail": "No Puedes Cambiar el Correo",
+    "cannotChangeOAuthEmailDesc": "Tu correo es administrado por Google. Para cambiar tu correo, por favor crea una nueva cuenta con una dirección de correo diferente.",
+    "googleSignInError": "Error al iniciar sesión con Google",
     "roleDescriptions": {
       "participantDesc": "Resuelve desafíos y compite con otros desarrolladores",
       "creatorDesc": "Crea y gestiona tus propios desafíos de programación"

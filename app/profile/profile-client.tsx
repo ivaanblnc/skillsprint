@@ -18,6 +18,8 @@ import {
   Trophy, Mail, UserIcon, Calendar, Target, Code2, ArrowLeft, 
   Edit, Save, X, Loader2, CheckCircle, AlertCircle, Plus, BookOpen
 } from "lucide-react"
+import { OAuthEmailChangeModal } from "@/components/oauth-email-change-modal"
+import { getUserAuthProvider } from "@/lib/services/auth-oauth.service"
 // Helper function for client-side translation
 function translate(translations: Record<string, any>, key: string, params?: Record<string, any>): string {
   const keys = key.split('.')
@@ -176,6 +178,8 @@ export const ProfileClient: React.FC<ProfileClientProps> = ({
   const [isEditing, setIsEditing] = React.useState(false)
   const [success, setSuccess] = React.useState<string | null>(null)
   const [error, setError] = React.useState<string | null>(null)
+  const [oauthProvider, setOAuthProvider] = React.useState<"google" | "github" | "microsoft" | null>(null)
+  const [showOAuthModal, setShowOAuthModal] = React.useState(false)
 
   // Clear messages after timeout
   React.useEffect(() => {
@@ -187,6 +191,32 @@ export const ProfileClient: React.FC<ProfileClientProps> = ({
       return () => clearTimeout(timer)
     }
   }, [success, error])
+
+  // Check if user is OAuth user
+  React.useEffect(() => {
+    const checkOAuthProvider = async () => {
+      try {
+        // First try to get from user.accounts if available
+        const userWithAccounts = user as any
+        if (userWithAccounts.accounts && Array.isArray(userWithAccounts.accounts)) {
+          const oauthAccount = userWithAccounts.accounts.find((acc: any) => acc.type === 'oauth')
+          if (oauthAccount) {
+            console.log("OAuth provider detected from user.accounts:", oauthAccount.provider)
+            setOAuthProvider(oauthAccount.provider as any)
+            return
+          }
+        }
+
+        // Fallback to database query
+        const provider = await getUserAuthProvider(user.id)
+        console.log("OAuth provider detected:", provider)
+        setOAuthProvider(provider)
+      } catch (error) {
+        console.error("Error checking OAuth provider:", error)
+      }
+    }
+    checkOAuthProvider()
+  }, [user.id])
 
   const handleEdit = () => {
     setIsEditing(true)
@@ -260,27 +290,27 @@ export const ProfileClient: React.FC<ProfileClientProps> = ({
           {/* Main Layout */}
           <div className="grid lg:grid-cols-12 gap-8">
             {/* Left Column - Profile Info & Quick Actions */}
-            <div className="lg:col-span-4 space-y-6">
+            <div className="lg:col-span-5 space-y-6">
               {/* Profile Card */}
-              <Card className="overflow-visible border-0 shadow-lg">
-                <CardHeader className="pb-4">
-                  <div className="space-y-4">
+              <Card className="overflow-hidden border-0 shadow-lg">
+                <CardHeader className="pb-3">
+                  <div className="space-y-3">
                     {/* Header with Edit Button */}
-                    <div className="flex items-start justify-between gap-3 mb-4">
+                    <div className="flex flex-col sm:flex-row items-start justify-between gap-2 sm:gap-3 mb-3">
                       <h3 className="text-lg font-semibold flex-1">{t("profile.profileInfo")}</h3>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={handleEdit}
-                        className="hover:bg-primary/10 flex-shrink-0"
+                        className="hover:bg-primary/10 flex-shrink-0 w-full sm:w-auto"
                       >
-                        <Edit className="h-4 w-4 sm:mr-2" />
-                        <span className="hidden sm:inline">{t("profile.editProfile")}</span>
+                        <Edit className="h-4 w-4 mr-2" />
+                        <span>{t("profile.editProfile")}</span>
                       </Button>
                     </div>
                     
                     {/* Profile Content */}
-                    <div className="flex flex-col sm:flex-row items-start gap-4">
+                    <div className="flex flex-col sm:flex-row items-start gap-4 w-full">
                       <Avatar className="h-20 w-20 ring-4 ring-primary/20 flex-shrink-0 mx-auto sm:mx-0">
                         <AvatarImage 
                           src={user.image || authUser.user_metadata?.avatar_url} 
@@ -290,15 +320,15 @@ export const ProfileClient: React.FC<ProfileClientProps> = ({
                           {(user.name || user.email || "U").charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="flex-1 min-w-0 w-full text-center sm:text-left">
-                        <h2 className="text-lg sm:text-xl font-bold break-words hyphens-auto leading-tight">
+                      <div className="flex-1 min-w-0 text-center sm:text-left w-full">
+                        <h2 className="text-base sm:text-lg font-bold leading-tight">
                           {user.name || "Usuario"}
                         </h2>
-                        <p className="text-muted-foreground text-sm mt-1 break-words hyphens-auto">
+                        <p className="text-muted-foreground text-xs sm:text-sm mt-1">
                           {user.email}
                         </p>
                         <div className="flex items-center justify-center sm:justify-start gap-2 mt-3 flex-wrap">
-                          <span className="text-xs sm:text-sm bg-primary/10 text-primary px-2 sm:px-3 py-1 rounded-full">
+                          <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full whitespace-nowrap">
                             {t(`profile.roles.${user.role?.toLowerCase() || 'participant'}`)}
                           </span>
                           <span className="text-xs sm:text-sm text-muted-foreground">
@@ -309,8 +339,8 @@ export const ProfileClient: React.FC<ProfileClientProps> = ({
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="pt-6">
-                  <div className="space-y-4">
+                <CardContent className="pt-3">
+                  <div className="space-y-3">
                     <div className="flex items-center gap-3">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm">
@@ -471,7 +501,7 @@ export const ProfileClient: React.FC<ProfileClientProps> = ({
             </div>
 
             {/* Center Column - Stats & Activity */}
-            <div className="lg:col-span-8 space-y-6">
+            <div className="lg:col-span-7 space-y-6">
               {/* Stats Overview Grid */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <Card className="text-center border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/50 dark:to-blue-900/30">
@@ -675,14 +705,32 @@ export const ProfileClient: React.FC<ProfileClientProps> = ({
               
               <div className="space-y-2">
                 <Label htmlFor="edit-email">{t("profile.email")}</Label>
-                <Input
-                  id="edit-email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setValue('email', e.target.value)}
-                  className={errors.email ? "border-destructive" : ""}
-                />
-                {errors.email && (
+                {oauthProvider ? (
+                  <div className="relative">
+                    <Input
+                      id="edit-email"
+                      type="email"
+                      value={formData.email}
+                      disabled={true}
+                      readOnly={true}
+                      className="cursor-not-allowed opacity-60 bg-muted"
+                    />
+                  </div>
+                ) : (
+                  <Input
+                    id="edit-email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setValue('email', e.target.value)}
+                    className={errors.email ? "border-destructive" : ""}
+                  />
+                )}
+                {oauthProvider && (
+                  <p className="text-sm text-amber-600 dark:text-amber-400">
+                    {t("auth.cannotChangeOAuthEmail")} ({oauthProvider})
+                  </p>
+                )}
+                {errors.email && !oauthProvider && (
                   <p className="text-sm text-destructive">{errors.email}</p>
                 )}
               </div>
@@ -713,6 +761,13 @@ export const ProfileClient: React.FC<ProfileClientProps> = ({
           </Card>
         </div>
       )}
+
+      {/* OAuth Email Change Modal */}
+      <OAuthEmailChangeModal
+        isOpen={showOAuthModal}
+        onClose={() => setShowOAuthModal(false)}
+        provider={oauthProvider || undefined}
+      />
 
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar {

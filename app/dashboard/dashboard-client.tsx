@@ -8,6 +8,7 @@
 
 import React from 'react'
 import { DashboardNav } from "@/components/dashboard-nav"
+import { RoleOnboardingModal } from "@/components/role-onboarding-modal"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -165,6 +166,8 @@ export const DashboardClient: React.FC<DashboardClientProps> = ({
   recentSubmissions,
   translations
 }) => {
+  const [showRoleModal, setShowRoleModal] = React.useState(!user.role)
+  const [currentUser, setCurrentUser] = React.useState(user)
   const t = (key: string, params?: Record<string, string>) => 
     translate(translations, key, params)
 
@@ -172,9 +175,37 @@ export const DashboardClient: React.FC<DashboardClientProps> = ({
     ? Math.round((stats.acceptedSubmissions / stats.totalSubmissions) * 100) 
     : 0
 
+  const handleRoleSelected = (role: "CREATOR" | "PARTICIPANT") => {
+    console.log("Role selected:", role)
+    // Update local state
+    setCurrentUser({
+      ...currentUser,
+      role: role as any
+    })
+    setShowRoleModal(false)
+    
+    // Refresh page to see updated role and navigation
+    setTimeout(() => {
+      window.location.reload()
+    }, 500)
+  }
+
   return (
     <div className="min-h-screen bg-background">
-      <DashboardNav />
+      {/* Show role selection modal if user doesn't have a role */}
+      {showRoleModal && (
+        <RoleOnboardingModal onRoleSelected={handleRoleSelected} />
+      )}
+
+      {/* Only show dashboard content if user has a role */}
+      {currentUser.role && (
+        <>
+          <DashboardNav 
+            userRole={user.role}
+            userName={user.name}
+            userEmail={user.email}
+            userImage={authUser.user_metadata?.avatar_url}
+          />
 
       <main className="container mx-auto px-4 py-8">
         {/* Hero Section - Compact */}
@@ -393,6 +424,8 @@ export const DashboardClient: React.FC<DashboardClientProps> = ({
           </Card>
         </div>
       </main>
+        </>
+      )}
     </div>
   )
 }

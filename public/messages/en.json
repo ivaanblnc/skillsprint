@@ -125,6 +125,8 @@
       "improveSolution": "Improve Solution",
       "startCoding": "Start Coding"
     },
+    "noChallenges": "You have no created challenges",
+    "createFirstChallenge": "Create your first challenge to get started!",
     "noChallengesFound": "No challenges found",
     "tryAdjustingFilters": "Try adjusting your filters or search terms",
     "checkBackLater": "Check back later for new challenges!",
@@ -539,7 +541,14 @@
     "completedChallengesLabel": "Challenges Completed",
     "totalPointsLabel": "Total Points",
     "startParticipating": "Start participating in challenges!",
-    "description": "Manage your personal information and review your progress"
+    "description": "Manage your personal information and review your progress",
+    "errors": {
+      "nameRequired": "Name is required",
+      "emailRequired": "Email is required",
+      "emailInvalid": "Please enter a valid email address",
+      "fixErrors": "Please fix the errors above",
+      "updateFailed": "Failed to update profile"
+    }
   },
   "auth": {
     "signIn": "Sign In",
@@ -571,6 +580,13 @@
     "createAccountDesc": "Join the community of developers",
     "joinSkillSprint": "Join SkillSprint",
     "createAccountStart": "Create your account to get started",
+    "signingIn": "Signing in...",
+    "sendingLink": "Sending link...",
+    "checkEmailForLink": "Check your email for the sign-in link",
+    "orSignInWith": "Or continue with",
+    "cannotChangeOAuthEmail": "Cannot Change Email",
+    "cannotChangeOAuthEmailDesc": "Your email is managed by Google. To change your email, please create a new account with a different email address.",
+    "googleSignInError": "Failed to sign in with Google",
     "roleDescriptions": {
       "participantDesc": "Solve challenges and compete with other developers",
       "creatorDesc": "Create and manage your own coding challenges"

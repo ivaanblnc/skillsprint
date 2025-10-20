@@ -38,42 +38,62 @@ const NavItem: React.FC<NavItemProps> = ({ href, icon: Icon, children, onClick }
   </Link>
 )
 
-export function DashboardNav() {
+interface DashboardNavProps {
+  userRole?: string | null
+  userName?: string | null
+  userEmail?: string | null
+  userImage?: string | null
+}
+
+export function DashboardNav({ userRole: propUserRole, userName: propUserName, userEmail: propUserEmail, userImage: propUserImage }: DashboardNavProps) {
   const router = useRouter()
   const t = useTranslations()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [user, setUser] = useState<any>(null)
-  const [userInfo, setUserInfo] = useState<{ name: string | null, email: string | null, role: string | null } | null>(null)
-  const [loading, setLoading] = useState(true)
+  
+  // Estados para datos del usuario
+  const [userRole, setUserRole] = useState<string | null>(propUserRole || null)
+  const [userName, setUserName] = useState<string | null>(propUserName || null)
+  const [userEmail, setUserEmail] = useState<string | null>(propUserEmail || null)
+  const [userImage, setUserImage] = useState<string | null>(propUserImage || null)
+  const [loading, setLoading] = useState(!propUserRole) // Solo carga si no hay props
 
-  // Get user info
+  // Si no se pasan props, obtén del servidor
   useEffect(() => {
-    const initializeAuth = async () => {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
-      if (user) {
-        try {
-          const response = await fetch('/api/user/profile')
-          if (response.ok) {
-            const userData = await response.json()
-            setUserInfo(userData)
-          }
-        } catch {}
-      }
+    if (propUserRole && propUserEmail) {
+      // Ya tenemos los datos, no cargar
       setLoading(false)
+      return
     }
-    initializeAuth()
-  }, [])
 
-  // Navigation items by role
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch('/api/user/profile')
+        if (response.ok) {
+          const userData = await response.json()
+          setUserRole(userData.role)
+          setUserName(userData.name)
+          setUserEmail(userData.email)
+          setUserImage(userData.image)
+        }
+      } catch (error) {
+        console.error('Failed to fetch user data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchUserData()
+  }, [propUserRole, propUserEmail])
+
+  // Navigation items by role - Renderiza inmediatamente con props del servidor
   const getNavigation = () => {
     const base = [
       { name: t("nav.dashboard"), href: "/dashboard", icon: Target },
       { name: t("nav.challenges"), href: "/challenges", icon: Code2 },
       { name: t("nav.leaderboard"), href: "/leaderboard", icon: Trophy },
     ]
-    if (userInfo?.role === 'CREATOR') {
+    // Solo añade opciones de creador si el rol es CREATOR
+    if (userRole === 'CREATOR') {
       base.splice(2, 0,
         { name: t("nav.createChallenge"), href: "/challenges/create", icon: Plus },
         { name: t("nav.myChallenges"), href: "/challenges/manage", icon: FolderOpen }
@@ -83,14 +103,11 @@ export function DashboardNav() {
   }
   const navigation = getNavigation()
 
-  // Display name util
+  // Display name - Usa props del servidor directamente
   const getDisplayName = () => {
-    if (loading) return "User"
-    const name = userInfo?.name || user?.user_metadata?.name
-    const email = userInfo?.email || user?.email
-    if (!email) return "User"
-    if (name && name !== email) return name
-    return email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+    if (!userEmail) return "User"
+    if (userName && userName !== userEmail) return userName
+    return userEmail.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
   }
 
   // Mobile sidebar
@@ -114,12 +131,12 @@ export function DashboardNav() {
           </div>
           <div className="p-4 border-t flex items-center gap-3">
             <Avatar className="h-9 w-9">
-              <AvatarImage src={user?.user_metadata?.avatar_url || ""} alt={getDisplayName()} />
+              <AvatarImage src={userImage || ""} alt={getDisplayName()} />
               <AvatarFallback>{getDisplayName().charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold truncate">{getDisplayName()}</p>
-              <p className="text-xs text-muted-foreground capitalize">{userInfo?.role?.toLowerCase() || 'Participant'}</p>
+              <p className="text-xs text-muted-foreground capitalize">{userRole?.toLowerCase() || 'Participant'}</p>
             </div>
           </div>
         </nav>
@@ -160,7 +177,7 @@ export function DashboardNav() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="ml-1">
                   <Avatar className="h-9 w-9">
-                    <AvatarImage src={user?.user_metadata?.avatar_url || ""} alt={getDisplayName()} />
+                    <AvatarImage src={userImage || ""} alt={getDisplayName()} />
                     <AvatarFallback>{getDisplayName().charAt(0)}</AvatarFallback>
                   </Avatar>
                 </Button>
@@ -169,8 +186,8 @@ export function DashboardNav() {
                 <DropdownMenuLabel>
                   <div className="flex flex-col gap-1">
                     <span className="font-semibold">{getDisplayName()}</span>
-                    <span className="text-xs text-muted-foreground break-all">{userInfo?.email || user?.email}</span>
-                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded capitalize w-fit mt-1">{userInfo?.role?.toLowerCase() || 'Participant'}</span>
+                    <span className="text-xs text-muted-foreground break-all">{userEmail}</span>
+                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded capitalize w-fit mt-1">{userRole?.toLowerCase() || 'Participant'}</span>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
