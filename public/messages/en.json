@@ -62,10 +62,17 @@
     "mySubmissions": "My Submissions",
     "viewSubmissions": "View Submissions",
     "difficulty": {
+      "label": "Difficulty",
       "easy": "Easy",
-      "medium": "Medium", 
+      "medium": "Medium",
       "hard": "Hard"
     },
+    "difficulty_options": {
+      "easy": "Easy",
+      "medium": "Medium",
+      "hard": "Hard"
+    },
+    "allDifficulties": "All difficulties",
     "status": {
       "active": "Active",
       "draft": "Draft",
@@ -87,7 +94,6 @@
     },
     "searchPlaceholder": "Search challenges...",
     "selectDifficulty": "Select difficulty",
-    "allDifficulties": "All difficulties",
     "showingResults": "Showing {{count}} of {{total}} results",
     "details": {
       "points": "points",
@@ -142,9 +148,6 @@
     "complete": "Complete",
     "filterByDifficulty": "Filter by difficulty:",
     "all": "All",
-    "easy": "Easy",
-    "medium": "Medium",
-    "hard": "Hard",
     "showing": "Showing",
     "of": "of",
     "challenges": "challenges",
@@ -154,9 +157,7 @@
     "noResultsGeneral": "Try adjusting your filters or search terms.",
     "startChallenge": "Start Challenge",
     "delete": "Delete",
-    "confirmDelete": "Are you sure you want to delete this challenge? This action cannot be undone.",
-    "noChallenges": "You have no created challenges",
-    "createFirstChallenge": "Create your first challenge to get started!"
+    "confirmDelete": "Are you sure you want to delete this challenge? This action cannot be undone."
   },
   "submissions": {
     "title": "Submissions",
@@ -587,6 +588,11 @@
     "cannotChangeOAuthEmail": "Cannot Change Email",
     "cannotChangeOAuthEmailDesc": "Your email is managed by Google. To change your email, please create a new account with a different email address.",
     "googleSignInError": "Failed to sign in with Google",
+    "creatingAccount": "Creating account...",
+    "signUpSuccess": {
+      "emailNotConfirmed": "We sent you a confirmation email. Please verify your email to complete your registration.",
+      "confirmed": "Your account has been confirmed successfully!"
+    },
     "roleDescriptions": {
       "participantDesc": "Solve challenges and compete with other developers",
       "creatorDesc": "Create and manage your own coding challenges"
@@ -829,6 +835,7 @@
     "minutes": "minutes",
     "participants": "participants",
     "startChallenge": "Start Challenge",
+    "viewSubmissions": "View Submissions",
     "viewStatus": "View Status",
     "viewOnly": "View Only",
     "activeChallenge": "Challenge is active",

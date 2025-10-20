@@ -82,7 +82,7 @@ const ChallengeCard: React.FC<{
             <div className="flex items-center gap-2 mb-1">
               <CardTitle className="text-lg truncate">{challenge.title}</CardTitle>
               <Badge variant={getBadgeVariant.difficulty(challenge.difficulty)}>
-                {t(`challenges.difficulty.${challenge.difficulty.toLowerCase()}`)}
+                {t(`challenges.difficulty_options.${challenge.difficulty.toLowerCase()}`)}
               </Badge>
             </div>
             <CardDescription className="line-clamp-2 text-sm">
@@ -217,6 +217,7 @@ export const ChallengeManageClient: React.FC<ChallengeManageClientProps> = ({
 
   // UI state
   const [searchQuery, setSearchQuery] = React.useState(searchParams.get('search') || '')
+  const [difficultyFilter, setDifficultyFilter] = React.useState<string>(searchParams.get('difficulty') || 'all')
   const [searchLoading, setSearchLoading] = React.useState(false)
   const [success, setSuccess] = React.useState<string | null>(null)
   const [error, setError] = React.useState<string | null>(null)
@@ -226,21 +227,24 @@ export const ChallengeManageClient: React.FC<ChallengeManageClientProps> = ({
   const { loading, updateChallengeStatus, deleteChallenge } = useChallengeActions()
 
   // Simple search function
-  const fetchChallenges = async (searchTerm: string = '', page: number = 1) => {
+  const fetchChallenges = async (searchTerm: string = '', difficulty: string = '', page: number = 1) => {
     setSearchLoading(true)
     setError(null)
     
     try {
       const params = new URLSearchParams({
-        page: page.toString(),
-        limit: '3'
+        page: page.toString()
       })
       
       if (searchTerm.trim()) {
         params.set('search', searchTerm.trim())
       }
 
-      const response = await fetch(`/api/challenges/manage?${params.toString()}`)
+      if (difficulty && difficulty !== '') {
+        params.set('difficulty', difficulty)
+      }
+
+      const response = await fetch(`/api/challenges?${params.toString()}`)
       
       if (!response.ok) {
         throw new Error('Failed to fetch challenges')
@@ -248,13 +252,18 @@ export const ChallengeManageClient: React.FC<ChallengeManageClientProps> = ({
 
       const result = await response.json()
       
-      if (result.success) {
-        setChallenges(result.data.challenges)
-        setPagination(result.data.pagination)
-      }
+      setChallenges(result.challenges || [])
+      setPagination(result.pagination || {
+        page: 1,
+        limit: 3,
+        total: 0,
+        totalPages: 0,
+        hasNext: false,
+        hasPrev: false
+      })
     } catch (err) {
       console.error('Error fetching challenges:', err)
-      setError(t("challenges.loadError") || "Error al cargar desafíos")
+      setError(t("challenges.errors.fetchFailed") || "Error al cargar desafíos")
     } finally {
       setSearchLoading(false)
     }
@@ -271,7 +280,21 @@ export const ChallengeManageClient: React.FC<ChallengeManageClientProps> = ({
     }
     
     searchTimeoutRef.current = setTimeout(() => {
-      fetchChallenges(value, 1)
+      fetchChallenges(value, difficultyFilter, 1)
+    }, 500)
+  }
+
+  // Handle difficulty filter change
+  const handleDifficultyChange = (difficulty: string) => {
+    setDifficultyFilter(difficulty)
+    
+    // Simple debounce with timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current)
+    }
+    
+    searchTimeoutRef.current = setTimeout(() => {
+      fetchChallenges(searchQuery, difficulty, 1)
     }, 500)
   }
 
@@ -296,7 +319,7 @@ export const ChallengeManageClient: React.FC<ChallengeManageClientProps> = ({
   }, [])
 
   const handlePageChange = async (page: number) => {
-    fetchChallenges(searchQuery, page)
+    fetchChallenges(searchQuery, difficultyFilter, page)
   }
 
   const handleStatusUpdate = async (challengeId: string, status: string) => {
@@ -349,7 +372,7 @@ export const ChallengeManageClient: React.FC<ChallengeManageClientProps> = ({
             
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div className="flex items-start gap-3">
-                <div className="p-2 bg-purple-100 dark:bg-purple-950 rounded-lg">
+                <div className="p-2 bg-white dark:bg-slate-900 rounded-lg">
                   <Code className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div>
@@ -404,6 +427,21 @@ export const ChallengeManageClient: React.FC<ChallengeManageClientProps> = ({
                     className="pl-10 bg-white dark:bg-slate-900 border-indigo-300 dark:border-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
                     disabled={searchLoading}
                   />
+                </div>
+
+                {/* Difficulty Filter */}
+                <div className="flex flex-col gap-2">
+                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400">{t("challenges.difficulty")}</p>
+                  <select
+                    value={difficultyFilter}
+                    onChange={(e) => handleDifficultyChange(e.target.value)}
+                    className="px-3 py-2 rounded-md bg-white dark:bg-slate-900 border border-indigo-300 dark:border-indigo-800 focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+                  >
+                    <option value="">{t("challenges.allDifficulties") || "Todas"}</option>
+                    <option value="EASY">{t("challenges.difficulty_options.easy") || "Fácil"}</option>
+                    <option value="MEDIUM">{t("challenges.difficulty_options.medium") || "Medio"}</option>
+                    <option value="HARD">{t("challenges.difficulty_options.hard") || "Difícil"}</option>
+                  </select>
                 </div>
               </div>
             </CardContent>

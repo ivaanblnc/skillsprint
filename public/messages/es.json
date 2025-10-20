@@ -62,10 +62,17 @@
     "mySubmissions": "Mis Envíos",
     "viewSubmissions": "Ver Entregas",
     "difficulty": {
+      "label": "Dificultad",
       "easy": "Fácil",
       "medium": "Medio",
       "hard": "Difícil"
     },
+    "difficulty_options": {
+      "easy": "Fácil",
+      "medium": "Medio",
+      "hard": "Difícil"
+    },
+    "allDifficulties": "Todas las dificultades",
     "status": {
       "active": "Activo",
       "draft": "Borrador",
@@ -87,7 +94,6 @@
     },
     "searchPlaceholder": "Buscar desafíos...",
     "selectDifficulty": "Seleccionar dificultad",
-    "allDifficulties": "Todas las dificultades",
     "showingResults": "Mostrando {{count}} de {{total}} resultados",
     "details": {
       "points": "puntos",
@@ -145,9 +151,6 @@
     "complete": "Completar",
     "filterByDifficulty": "Filtrar por dificultad:",
     "all": "Todo",
-    "easy": "Fácil",
-    "medium": "Medio",
-    "hard": "Difícil",
     "showing": "Mostrando",
     "of": "de",
     "challenges": "desafíos",
@@ -665,6 +668,11 @@
     "cannotChangeOAuthEmail": "No Puedes Cambiar el Correo",
     "cannotChangeOAuthEmailDesc": "Tu correo es administrado por Google. Para cambiar tu correo, por favor crea una nueva cuenta con una dirección de correo diferente.",
     "googleSignInError": "Error al iniciar sesión con Google",
+    "creatingAccount": "Creando cuenta...",
+    "signUpSuccess": {
+      "emailNotConfirmed": "Te hemos enviado un correo de confirmación. Por favor verifica tu email para completar el registro.",
+      "confirmed": "¡Tu cuenta ha sido confirmada exitosamente!"
+    },
     "roleDescriptions": {
       "participantDesc": "Resuelve desafíos y compite con otros desarrolladores",
       "creatorDesc": "Crea y gestiona tus propios desafíos de programación"

@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
                 email: supabaseUser.email || "",
                 name: supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name || supabaseUser.email?.split("@")[0] || "User",
                 image: supabaseUser.user_metadata?.avatar_url,
-                // Don't set role here - it will be null by default
+                role: undefined, // IMPORTANT: Force role to undefined for new OAuth users (so they select role on dashboard)
                 accounts: {
                   create: {
                     type: "oauth",
@@ -159,6 +159,16 @@ export async function GET(request: NextRequest) {
             })
 
             if (!existingAccount) {
+              // First time linking Google OAuth to this user - reset role if they have one
+              // so they have to select role again through the OAuth flow
+              if (existingUser!.role) {
+                console.log("First-time OAuth link detected. User has existing role:", existingUser!.role, "- resetting to null for role selection")
+                await prisma.user.update({
+                  where: { id: existingUser!.id },
+                  data: { role: null as any }, // Force reset to null only on first OAuth link
+                })
+              }
+              
               // Create new OAuth account link
               await prisma.account.create({
                 data: {
@@ -172,7 +182,7 @@ export async function GET(request: NextRequest) {
               })
               console.log("Created new OAuth account link for existing user")
             } else {
-              // Update tokens
+              // OAuth account already exists, just update tokens (don't touch role)
               await prisma.account.update({
                 where: { id: existingAccount.id },
                 data: {
@@ -180,7 +190,7 @@ export async function GET(request: NextRequest) {
                   refresh_token: data.session?.refresh_token,
                 },
               })
-              console.log("Updated OAuth tokens for existing account")
+              console.log("Updated OAuth tokens for existing account (role unchanged)")
             }
             
             console.log("✅ Google OAuth user synced successfully")

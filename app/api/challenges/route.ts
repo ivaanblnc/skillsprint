@@ -190,10 +190,39 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: "Forbidden - Creator access required" }, { status: 403 })
     }
 
-    // Get creator's challenges
+    // Get query parameters
+    const { searchParams } = new URL(request.url)
+    const searchTerm = searchParams.get("search") || ""
+    const difficulty = searchParams.get("difficulty") || ""
+    const page = parseInt(searchParams.get("page") || "1", 10)
+    const limit = 3
+
+    // Build where clause
+    const whereClause: any = {
+      creatorId: user.id
+    }
+
+    if (searchTerm) {
+      whereClause.OR = [
+        { title: { contains: searchTerm, mode: "insensitive" } },
+        { description: { contains: searchTerm, mode: "insensitive" } }
+      ]
+    }
+
+    if (difficulty && ["EASY", "MEDIUM", "HARD"].includes(difficulty)) {
+      whereClause.difficulty = difficulty
+    }
+
+    // Get total count
+    const totalCount = await prisma.challenge.count({ where: whereClause })
+    const totalPages = Math.ceil(totalCount / limit)
+
+    // Get challenges with pagination
     const challenges = await prisma.challenge.findMany({
-      where: { creatorId: user.id },
+      where: whereClause,
       orderBy: { createdAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
       include: {
         _count: {
           select: {
@@ -204,7 +233,17 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    return NextResponse.json({ challenges })
+    return NextResponse.json({ 
+      challenges,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1
+      }
+    })
 
   } catch (error) {
     console.error("Error fetching challenges:", error)
