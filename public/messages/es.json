@@ -44,7 +44,17 @@
     "createChallenge": "Crear Desafío",
     "manageMyChallenges": "Gestionar Mis Desafíos",
     "reviewSubmissions": "Revisar Envíos",
-    "judgeChallenges": "Juzgar Desafíos"
+    "judgeChallenges": "Juzgar Desafíos",
+    "exploreChallenges": "Explorar Desafíos",
+    "exploreChallengesDesc": "Busca y filtra desafíos por dificultad y categoría",
+    "leaderboard": "Tabla de Clasificación",
+    "leaderboardDesc": "Compite con otros y ve dónde te posicionas",
+    "yourProfile": "Tu Perfil",
+    "yourProfileDesc": "Ver y editar tu información de perfil",
+    "profile": "Ver Perfil",
+    "statistics": "Estadísticas",
+    "statisticsDesc": "Desglose detallado de tu progreso",
+    "activeChallenges": "Desafíos Activos"
   },
   "challenges": {
     "title": "Desafíos",
@@ -501,7 +511,7 @@
     "joinCompetition": "¿Listo para unirte a la competición?",
     "climbRanks": "Comienza a resolver desafíos y escala la tabla de clasificación global. ¡Cada solución cuenta!",
     "totalUsers": "Usuarios Totales",
-    "activeChallenges": "Desafíos Activos",
+    "totalChallenges": "Desafíos Totales",
     "totalSubmissions": "Total de Envíos",
     "activeUsers": "Usuarios Activos",
     "startChallenges": "Comenzar Desafíos",
@@ -930,5 +940,16 @@
     "easy": "Fácil",
     "medium": "Medio",
     "hard": "Difícil"
+  },
+  "authRequired": {
+    "title": "¡Únete a SkillSprint para Empezar a Programar!",
+    "description": "Necesitas iniciar sesión para participar en desafíos de programación y rastrear tu progreso.",
+    "solveChallenge": "Resuelve Desafíos",
+    "earnPoints": "Gana Puntos",
+    "compete": "Compite",
+    "logIn": "Iniciar Sesión",
+    "signUp": "Registrarse",
+    "alreadyHaveAccount": "¿Ya tienes una cuenta?",
+    "logInHere": "Inicia sesión aquí"
   }
 }

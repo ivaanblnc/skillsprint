@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog"
 import { Code2, Users, Trophy } from "lucide-react"
 import Link from "next/link"
+import { useI18n } from "@/lib/i18n"
 
 interface AuthRequiredModalProps {
   isOpen: boolean
@@ -18,6 +19,8 @@ interface AuthRequiredModalProps {
 }
 
 export function AuthRequiredModal({ isOpen, onClose }: AuthRequiredModalProps) {
+  const { t } = useI18n()
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
@@ -27,9 +30,9 @@ export function AuthRequiredModal({ isOpen, onClose }: AuthRequiredModalProps) {
               <Code2 className="h-8 w-8 text-primary-foreground" />
             </div>
           </div>
-          <DialogTitle className="text-center">Join SkillSprint to Start Coding!</DialogTitle>
+          <DialogTitle className="text-center">{t("authRequired.title")}</DialogTitle>
           <DialogDescription className="text-center">
-            You need to be logged in to participate in coding challenges and track your progress.
+            {t("authRequired.description")}
           </DialogDescription>
         </DialogHeader>
         
@@ -37,15 +40,15 @@ export function AuthRequiredModal({ isOpen, onClose }: AuthRequiredModalProps) {
           <div className="grid grid-cols-3 gap-4 text-center">
             <div className="space-y-2">
               <Code2 className="h-6 w-6 mx-auto text-primary" />
-              <p className="text-xs text-muted-foreground">Solve Challenges</p>
+              <p className="text-xs text-muted-foreground">{t("authRequired.solveChallenge")}</p>
             </div>
             <div className="space-y-2">
               <Trophy className="h-6 w-6 mx-auto text-primary" />
-              <p className="text-xs text-muted-foreground">Earn Points</p>
+              <p className="text-xs text-muted-foreground">{t("authRequired.earnPoints")}</p>
             </div>
             <div className="space-y-2">
               <Users className="h-6 w-6 mx-auto text-primary" />
-              <p className="text-xs text-muted-foreground">Compete</p>
+              <p className="text-xs text-muted-foreground">{t("authRequired.compete")}</p>
             </div>
           </div>
         </div>
@@ -53,18 +56,18 @@ export function AuthRequiredModal({ isOpen, onClose }: AuthRequiredModalProps) {
         <div className="grid grid-cols-2 gap-3">
           <Link href="/auth/login" className="w-full">
             <Button variant="outline" className="w-full">
-              Log In
+              {t("authRequired.logIn")}
             </Button>
           </Link>
           <Link href="/auth/register" className="w-full">
             <Button className="w-full">
-              Sign Up
+              {t("authRequired.signUp")}
             </Button>
           </Link>
         </div>
         
         <p className="text-xs text-center text-muted-foreground mt-2">
-          Already have an account? <Link href="/auth/login" className="text-primary hover:underline">Log in here</Link>
+          {t("authRequired.alreadyHaveAccount")} <Link href="/auth/login" className="text-primary hover:underline">{t("authRequired.logInHere")}</Link>
         </p>
       </DialogContent>
     </Dialog>

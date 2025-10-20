@@ -15,7 +15,8 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { 
   ArrowLeft, Plus, Edit, Trash2, Eye, Users, BarChart3, Settings, 
-  Clock, Trophy, Play, Loader2, CheckCircle, AlertCircle, Search
+  Clock, Trophy, Play, Loader2, CheckCircle, AlertCircle, Search,
+  Zap, Code, Layers, Sparkles, Flame, BookOpen, Brain, Compass
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import Pagination from "@/components/ui/pagination"
@@ -74,8 +75,8 @@ const ChallengeCard: React.FC<{
   const canDelete = challenge.status === "DRAFT" && challenge._count.submissions === 0
 
   return (
-    <Card className="group hover:shadow-md transition-shadow">
-      <CardHeader className="pb-3">
+    <Card className="group hover:shadow-lg transition-all border-l-4 border-l-orange-500 dark:border-l-orange-400 bg-white dark:bg-slate-950">
+      <CardHeader className="pb-3 bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-950/30 dark:to-yellow-950/30">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
@@ -94,24 +95,24 @@ const ChallengeCard: React.FC<{
         </div>
       </CardHeader>
       
-      <CardContent className="space-y-3">
-        {/* Stats */}
+      <CardContent className="space-y-3 pt-4">
+        {/* Stats con iconos variados y colores */}
         <div className="grid grid-cols-4 gap-3 text-sm">
-          <div className="flex items-center gap-1.5">
-            <Trophy className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-muted-foreground text-xs">{challenge.points}pts</span>
+          <div className="flex flex-col items-center gap-1.5 p-2 rounded-lg bg-amber-50 dark:bg-amber-950/30">
+            <Flame className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <span className="text-muted-foreground text-xs text-center font-medium">{challenge.points}pts</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-muted-foreground text-xs">{challenge.timeLimit}m</span>
+          <div className="flex flex-col items-center gap-1.5 p-2 rounded-lg bg-cyan-50 dark:bg-cyan-950/30">
+            <Zap className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+            <span className="text-muted-foreground text-xs text-center font-medium">{challenge.timeLimit}m</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <Users className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-muted-foreground text-xs">{challenge.participantCount || 0}</span>
+          <div className="flex flex-col items-center gap-1.5 p-2 rounded-lg bg-rose-50 dark:bg-rose-950/30">
+            <Brain className="h-4 w-4 text-rose-600 dark:text-rose-400" />
+            <span className="text-muted-foreground text-xs text-center font-medium">{challenge.participantCount || 0}</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-muted-foreground text-xs">{challenge.averageScore || 0}%</span>
+          <div className="flex flex-col items-center gap-1.5 p-2 rounded-lg bg-lime-50 dark:bg-lime-950/30">
+            <BookOpen className="h-4 w-4 text-lime-600 dark:text-lime-400" />
+            <span className="text-muted-foreground text-xs text-center font-medium">{challenge.averageScore || 0}%</span>
           </div>
         </div>
 
@@ -336,8 +337,8 @@ export const ChallengeManageClient: React.FC<ChallengeManageClientProps> = ({
 
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
-          {/* Header */}
-          <div className="mb-8">
+          {/* Header con color */}
+          <div className="mb-8 bg-white dark:bg-slate-950 rounded-2xl p-8 border border-slate-200 dark:border-slate-800">
             <Link 
               href="/challenges" 
               className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-4"
@@ -347,15 +348,20 @@ export const ChallengeManageClient: React.FC<ChallengeManageClientProps> = ({
             </Link>
             
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div>
-                <h1 className="text-3xl font-bold mb-2">{t("challenges.manageChallenges")}</h1>
-                <p className="text-muted-foreground">
-                  {t("challenges.manageDescription")}
-                </p>
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-purple-100 dark:bg-purple-950 rounded-lg">
+                  <Code className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold mb-2">{t("challenges.manageChallenges")}</h1>
+                  <p className="text-muted-foreground">
+                    {t("challenges.manageDescription")}
+                  </p>
+                </div>
               </div>
               
               <Link href="/challenges/create">
-                <Button>
+                <Button className="bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600">
                   <Plus className="h-4 w-4 mr-2" />
                   {t("challenges.createNew")}
                 </Button>
@@ -379,19 +385,23 @@ export const ChallengeManageClient: React.FC<ChallengeManageClientProps> = ({
           )}
 
           {/* Search and Filters */}
-          <Card className="mb-6">
+          <Card className="mb-6 bg-gradient-to-r from-indigo-50 to-cyan-50 dark:from-slate-950 dark:to-slate-950 border-indigo-200 dark:border-indigo-900">
             <CardContent className="p-4">
-              <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                  <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400">{t("challenges.searchPlaceholder")}</p>
+                </div>
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-indigo-400 dark:text-indigo-600" />
                   {searchLoading && (
-                    <Loader2 className="absolute right-3 top-3 h-4 w-4 text-muted-foreground animate-spin" />
+                    <Loader2 className="absolute right-3 top-3 h-4 w-4 text-indigo-500 animate-spin" />
                   )}
                   <Input
                     placeholder={t("challenges.searchPlaceholder")}
                     value={searchQuery}
                     onChange={handleSearchChange}
-                    className="pl-10"
+                    className="pl-10 bg-white dark:bg-slate-900 border-indigo-300 dark:border-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
                     disabled={searchLoading}
                   />
                 </div>
@@ -428,9 +438,11 @@ export const ChallengeManageClient: React.FC<ChallengeManageClientProps> = ({
             </div>
           ) : (
             <div className="space-y-6">
-              <Card>
+              <Card className="bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-950 dark:to-slate-900 border-blue-200 dark:border-blue-900">
                 <CardContent className="text-center py-12">
-                  <Trophy className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <div className="p-3 bg-blue-100 dark:bg-blue-950 rounded-lg w-fit mx-auto mb-4">
+                    <Compass className="h-12 w-12 text-blue-600 dark:text-blue-400" />
+                  </div>
                   <h3 className="text-lg font-semibold mb-2">
                     {searchQuery ? t("challenges.noResultsFound") : t("challenges.noChallenges")}
                   </h3>
@@ -442,7 +454,7 @@ export const ChallengeManageClient: React.FC<ChallengeManageClientProps> = ({
                   </p>
                   {!searchQuery && (
                     <Link href="/challenges/create">
-                      <Button>
+                      <Button className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600">
                         <Plus className="h-4 w-4 mr-2" />
                         {t("challenges.createNew")}
                       </Button>

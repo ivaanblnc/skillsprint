@@ -106,25 +106,37 @@ export default async function HomePage() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-20 px-4 relative">
+      <section className="py-20 px-4 relative bg-gradient-to-b from-transparent to-slate-50 dark:to-slate-950/50">
         <div className="absolute inset-0 bg-muted/20"></div>
         <div className="container mx-auto relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center glass-card p-8 liquid-border-lg glass-elevated">
-                <div className="text-4xl md:text-5xl font-bold text-primary mb-3">{stat.value}</div>
-                <div className="text-muted-foreground font-medium">{stat.label}</div>
-              </div>
-            ))}
+            {stats.map((stat, index) => {
+              const colors = [
+                "from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-800",
+                "from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 border-purple-200 dark:border-purple-800",
+                "from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200 dark:border-green-800"
+              ]
+              const textColors = [
+                "text-blue-600 dark:text-blue-400",
+                "text-purple-600 dark:text-purple-400",
+                "text-green-600 dark:text-green-400"
+              ]
+              return (
+                <div key={index} className={`text-center glass-card p-8 liquid-border-lg glass-elevated bg-gradient-to-br ${colors[index]} border`}>
+                  <div className={`text-4xl md:text-5xl font-bold ${textColors[index]} mb-3`}>{stat.value}</div>
+                  <div className="text-muted-foreground font-medium">{stat.label}</div>
+                </div>
+              )
+            })}
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="py-24 px-4">
+      <section className="py-24 px-4 bg-gradient-to-b from-slate-50 to-transparent dark:from-slate-950/30 dark:to-transparent">
         <div className="container mx-auto">
           <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-balance">{t("homepage.features.title")}</h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-balance bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-100 dark:to-slate-300 bg-clip-text text-transparent">{t("homepage.features.title")}</h2>
             <p className="text-xl md:text-2xl text-muted-foreground text-pretty max-w-3xl mx-auto leading-relaxed">
               {t("homepage.features.subtitle")}
             </p>
@@ -132,11 +144,23 @@ export default async function HomePage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => {
               const Icon = feature.icon
+              const cardColors = [
+                "bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/30 border-blue-200 dark:border-blue-800",
+                "bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/30 border-purple-200 dark:border-purple-800",
+                "bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/30 dark:to-amber-900/30 border-amber-200 dark:border-amber-800",
+                "bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/30 dark:to-green-900/30 border-green-200 dark:border-green-800"
+              ]
+              const iconColors = [
+                "bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400",
+                "bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400",
+                "bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400",
+                "bg-green-100 dark:bg-green-950 text-green-600 dark:text-green-400"
+              ]
               return (
-                <Card key={index} className="text-center glass-elevated">
+                <Card key={index} className={`text-center glass-elevated ${cardColors[index]} border`}>
                   <CardHeader>
-                    <div className="bg-primary/5 border border-primary/10 liquid-border-lg w-16 h-16 flex items-center justify-center mx-auto mb-6">
-                      <Icon className="h-8 w-8 text-primary" />
+                    <div className={`${iconColors[index]} border border-current/20 liquid-border-lg w-16 h-16 flex items-center justify-center mx-auto mb-6`}>
+                      <Icon className="h-8 w-8" />
                     </div>
                     <CardTitle className="text-xl mb-2">{feature.title}</CardTitle>
                   </CardHeader>
@@ -161,8 +185,8 @@ export default async function HomePage() {
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center">
-              <div className="bg-primary rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6">
-                <span className="text-2xl font-bold text-primary-foreground">1</span>
+              <div className="bg-blue-500 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6">
+                <span className="text-2xl font-bold text-white">1</span>
               </div>
               <h3 className="text-xl font-semibold mb-3">{t("homepage.howItWorks.step1.title")}</h3>
               <p className="text-muted-foreground text-pretty">
@@ -170,8 +194,8 @@ export default async function HomePage() {
               </p>
             </div>
             <div className="text-center">
-              <div className="bg-primary rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6">
-                <span className="text-2xl font-bold text-primary-foreground">2</span>
+              <div className="bg-purple-500 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6">
+                <span className="text-2xl font-bold text-white">2</span>
               </div>
               <h3 className="text-xl font-semibold mb-3">{t("homepage.howItWorks.step2.title")}</h3>
               <p className="text-muted-foreground text-pretty">
@@ -179,8 +203,8 @@ export default async function HomePage() {
               </p>
             </div>
             <div className="text-center">
-              <div className="bg-primary rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6">
-                <span className="text-2xl font-bold text-primary-foreground">3</span>
+              <div className="bg-green-500 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6">
+                <span className="text-2xl font-bold text-white">3</span>
               </div>
               <h3 className="text-xl font-semibold mb-3">{t("homepage.howItWorks.step3.title")}</h3>
               <p className="text-muted-foreground text-pretty">
@@ -194,25 +218,19 @@ export default async function HomePage() {
       {/* CTA Section */}
       <section className="py-20 px-4">
         <div className="container mx-auto text-center">
-          <Card className="max-w-2xl mx-auto">
+          <Card className="max-w-2xl mx-auto bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 border-blue-200 dark:border-blue-800">
             <CardHeader>
-              <CardTitle className="text-3xl mb-4 text-balance">{t("homepage.cta.title")}</CardTitle>
-              <CardDescription className="text-lg text-pretty">
+              <CardTitle className="text-3xl mb-4 text-balance text-black dark:text-white">{t("homepage.cta.title")}</CardTitle>
+              <CardDescription className="text-lg text-pretty text-gray-700 dark:text-gray-300">
                 {t("homepage.cta.subtitle")}
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href="/auth/register">
-                  <Button size="lg" className="text-lg px-8">
+                  <Button size="lg" className="text-lg px-8 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 dark:from-blue-500 dark:to-blue-600 dark:hover:from-blue-600 dark:hover:to-blue-700">
                     <Target className="mr-2 h-5 w-5" />
                     {t("homepage.cta.startJourney")}
-                  </Button>
-                </Link>
-                <Link href="/leaderboard">
-                  <Button size="lg" variant="outline" className="text-lg px-8 bg-transparent">
-                    <Trophy className="mr-2 h-5 w-5" />
-                    {t("homepage.cta.viewLeaderboard")}
                   </Button>
                 </Link>
               </div>
@@ -234,9 +252,6 @@ export default async function HomePage() {
             <div className="flex items-center gap-6">
               <Link href="/challenges" className="text-muted-foreground hover:text-foreground">
                 {t("homepage.footer.challenges")}
-              </Link>
-              <Link href="/leaderboard" className="text-muted-foreground hover:text-foreground">
-                {t("homepage.footer.leaderboard")}
               </Link>
               <Link href="/auth/login" className="text-muted-foreground hover:text-foreground">
                 {t("homepage.footer.signIn")}

@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { LeaderboardTabs } from "@/components/leaderboard-tabs"
-import { Trophy, Users, Target, TrendingUp, Crown, Medal, Award } from "lucide-react"
+import { Trophy, Users, Target, TrendingUp, Crown, Medal, Award, Flame, Zap } from "lucide-react"
 // Helper function for client-side translation
 function translate(translations: Record<string, any>, key: string, params?: Record<string, any>): string {
   const keys = key.split('.')
@@ -42,28 +42,6 @@ interface LeaderboardClientProps {
   stats: GlobalStats
   translations: Record<string, any>
 }
-
-// Stats Card Component
-const StatsCard: React.FC<{
-  icon: React.ReactNode
-  value: string | number
-  label: string
-  className?: string
-}> = ({ icon, value, label, className }) => (
-  <Card className={`glass-card ${className || ''}`}>
-    <CardContent className="p-6">
-      <div className="flex items-center gap-4">
-        <div className="p-3 glass-card liquid-border">
-          {icon}
-        </div>
-        <div>
-          <p className="text-3xl font-bold text-primary">{value}</p>
-          <p className="text-sm text-muted-foreground font-medium">{label}</p>
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-)
 
 // Leaderboard Item Component
 const LeaderboardItem: React.FC<{
@@ -180,38 +158,80 @@ export const LeaderboardClient: React.FC<LeaderboardClientProps> = ({
       <DashboardNav />
 
       <main className="container mx-auto px-4 py-12">
-        {/* Header */}
-        <div className="mb-12 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-balance">
-            {t("leaderboard.title")}
-          </h1>
-          <p className="text-xl text-muted-foreground text-pretty max-w-2xl mx-auto">
-            {t("leaderboard.description")}
-          </p>
-        </div>
+        {/* Header with Colorful Background */}
+        <div className="mb-12 bg-white dark:bg-slate-950 rounded-2xl p-8 border border-slate-200 dark:border-slate-800">
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="p-2 bg-yellow-100 dark:bg-yellow-950 rounded-lg">
+                <Trophy className="h-6 w-6 text-yellow-600" />
+              </div>
+              <h1 className="text-4xl md:text-5xl font-bold">
+                {t("leaderboard.title")}
+              </h1>
+            </div>
+            <p className="text-lg text-muted-foreground text-pretty max-w-2xl mx-auto">
+              {t("leaderboard.description")}
+            </p>
+          </div>
 
-        {/* Stats Overview */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
-          <StatsCard
-            icon={<Users className="h-6 w-6 text-primary" />}
-            value={formatNumber.compact(stats.totalUsers)}
-            label={t("leaderboard.totalUsers")}
-          />
-          <StatsCard
-            icon={<Target className="h-6 w-6 text-primary" />}
-            value={formatNumber.compact(stats.totalChallenges)}
-            label={t("leaderboard.activeChallenges")}
-          />
-          <StatsCard
-            icon={<TrendingUp className="h-6 w-6 text-primary" />}
-            value={formatNumber.compact(stats.totalSubmissions)}
-            label={t("leaderboard.totalSubmissions")}
-          />
-          <StatsCard
-            icon={<Trophy className="h-6 w-6 text-primary" />}
-            value={formatNumber.compact(stats.activeUsers)}
-            label={t("leaderboard.activeUsers")}
-          />
+          {/* Stats Overview - Colorful */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">{t("leaderboard.totalUsers") || "Total Users"}</p>
+                    <p className="text-2xl font-bold text-primary">{formatNumber.compact(stats.totalUsers)}</p>
+                  </div>
+                  <div className="p-3 bg-blue-100 dark:bg-blue-950 rounded-lg">
+                    <Users className="h-5 w-5 text-blue-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">{t("leaderboard.totalChallenges") || "Challenges"}</p>
+                    <p className="text-2xl font-bold text-primary">{formatNumber.compact(stats.totalChallenges)}</p>
+                  </div>
+                  <div className="p-3 bg-purple-100 dark:bg-purple-950 rounded-lg">
+                    <Target className="h-5 w-5 text-purple-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">{t("leaderboard.totalSubmissions") || "Submissions"}</p>
+                    <p className="text-2xl font-bold text-primary">{formatNumber.compact(stats.totalSubmissions)}</p>
+                  </div>
+                  <div className="p-3 bg-green-100 dark:bg-green-950 rounded-lg">
+                    <Zap className="h-5 w-5 text-green-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">{t("leaderboard.activeUsers") || "Active Users"}</p>
+                    <p className="text-2xl font-bold text-primary">{formatNumber.compact(stats.activeUsers)}</p>
+                  </div>
+                  <div className="p-3 bg-orange-100 dark:bg-orange-950 rounded-lg">
+                    <Flame className="h-5 w-5 text-orange-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Leaderboard */}

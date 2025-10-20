@@ -44,7 +44,17 @@
     "createChallenge": "Create Challenge",
     "manageMyChallenges": "Manage My Challenges",
     "reviewSubmissions": "Review Submissions",
-    "judgeChallenges": "Judge Challenges"
+    "judgeChallenges": "Judge Challenges",
+    "exploreChallenges": "Explore Challenges",
+    "exploreChallengesDesc": "Browse and filter challenges by difficulty and category",
+    "leaderboard": "Leaderboard",
+    "leaderboardDesc": "Compete with others and see where you rank",
+    "yourProfile": "Your Profile",
+    "yourProfileDesc": "View and edit your profile information",
+    "profile": "View Profile",
+    "statistics": "Statistics",
+    "statisticsDesc": "Detailed breakdown of your progress",
+    "activeChallenges": "Active Challenges"
   },
   "challenges": {
     "title": "Challenges",
@@ -421,7 +431,7 @@
     "joinCompetition": "Ready to join the competition?",
     "climbRanks": "Start solving challenges and climb the global leaderboard. Every solution counts!",
     "totalUsers": "Total Users",
-    "activeChallenges": "Active Challenges",
+    "totalChallenges": "Total Challenges",
     "totalSubmissions": "Total Submissions",
     "activeUsers": "Active Users",
     "startChallenges": "Start Challenges",
@@ -848,5 +858,16 @@
     "easy": "Easy",
     "medium": "Medium",
     "hard": "Hard"
+  },
+  "authRequired": {
+    "title": "Join SkillSprint to Start Coding!",
+    "description": "You need to be logged in to participate in coding challenges and track your progress.",
+    "solveChallenge": "Solve Challenges",
+    "earnPoints": "Earn Points",
+    "compete": "Compete",
+    "logIn": "Log In",
+    "signUp": "Sign Up",
+    "alreadyHaveAccount": "Already have an account?",
+    "logInHere": "Log in here"
   }
 }
