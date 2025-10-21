@@ -435,7 +435,7 @@ export const ChallengeManageClient: React.FC<ChallengeManageClientProps> = ({
                   />
                 </div>
 
-                {/* Difficulty Filter */}
+                {/* Difficulty Filter*/}
                 <div className="flex flex-col gap-2">
                   <p className="text-sm font-medium text-slate-600 dark:text-slate-400">{t("challenges.difficultyy")}</p>
                   <select
