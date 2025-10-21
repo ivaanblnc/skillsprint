@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -11,7 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, Code2, Users, AlertCircle } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
-export default function SelectRolePage() {
+function SelectRoleContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [role, setRole] = React.useState<"CREATOR" | "PARTICIPANT">("PARTICIPANT")
@@ -170,5 +170,13 @@ export default function SelectRolePage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function SelectRolePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Cargando...</div>}>
+      <SelectRoleContent />
+    </Suspense>
   )
 }
