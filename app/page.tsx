@@ -240,7 +240,7 @@ export default async function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t py-12 px-4 bg-muted/30">
+      <footer className="py-12 px-4 bg-muted/30">
         <div className="container mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center gap-2 mb-4 md:mb-0">
@@ -258,7 +258,7 @@ export default async function HomePage() {
               </Link>
             </div>
           </div>
-          <div className="border-t mt-8 pt-8 text-center text-muted-foreground">
+          <div className="mt-8 pt-8 text-center text-muted-foreground">
             <p>{t("homepage.footer.copyright")}</p>
           </div>
         </div>

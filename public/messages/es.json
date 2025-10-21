@@ -58,6 +58,7 @@
   },
   "challenges": {
     "title": "Desafíos",
+    "difficultyy": "Dificultad",
     "allChallenges": "Todos los Desafíos",
     "mySubmissions": "Mis Envíos",
     "viewSubmissions": "Ver Entregas",
@@ -779,7 +780,8 @@
     "loadError": "Error al cargar desafíos",
     "draft": "Borrador",
     "completed": "Completado",
-    "cancelled": "Cancelado"
+    "cancelled": "Cancelado",
+    "difficulty": "Dificultad"
   },
   "analytics": {
     "title": "Analíticas",
@@ -959,11 +961,6 @@
       "compilationError": "Error de Compilación",
       "timeLimitExceeded": "Tiempo Excedido"
     }
-  },
-  "difficulty": {
-    "easy": "Fácil",
-    "medium": "Medio",
-    "hard": "Difícil"
   },
   "authRequired": {
     "title": "¡Únete a SkillSprint para Empezar a Programar!",

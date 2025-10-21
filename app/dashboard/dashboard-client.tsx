@@ -95,7 +95,7 @@ const ActiveChallengeCard: React.FC<{
           </Badge>
         </div>
         
-        <div className="grid grid-cols-3 gap-2 pt-2 border-t">
+        <div className="grid grid-cols-3 gap-2 pt-4">
           <div className="text-center">
             <p className="text-2xl font-bold text-primary">{challenge.points}</p>
             <p className="text-xs text-muted-foreground">Points</p>

@@ -194,8 +194,16 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const searchTerm = searchParams.get("search") || ""
     const difficulty = searchParams.get("difficulty") || ""
-    const page = parseInt(searchParams.get("page") || "1", 10)
+    const pageParam = searchParams.get("page")
+    const page = pageParam ? parseInt(pageParam, 10) : 1
+    
+    // Ensure page is a valid number
+    if (isNaN(page) || page < 1) {
+      return NextResponse.json({ message: "Invalid page number" }, { status: 400 })
+    }
+    
     const limit = 3
+    const skip = (page - 1) * limit
 
     // Build where clause
     const whereClause: any = {
@@ -221,7 +229,7 @@ export async function GET(request: NextRequest) {
     const challenges = await prisma.challenge.findMany({
       where: whereClause,
       orderBy: { createdAt: "desc" },
-      skip: (page - 1) * limit,
+      skip: skip,
       take: limit,
       include: {
         _count: {
@@ -236,9 +244,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ 
       challenges,
       pagination: {
-        page,
-        limit,
-        total: totalCount,
+        currentPage: page,
+        totalCount,
         totalPages,
         hasNext: page < totalPages,
         hasPrev: page > 1

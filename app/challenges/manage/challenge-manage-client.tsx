@@ -76,7 +76,7 @@ const ChallengeCard: React.FC<{
 
   return (
     <Card className="group hover:shadow-lg transition-all border-l-4 border-l-orange-500 dark:border-l-orange-400 bg-white dark:bg-slate-950">
-      <CardHeader className="pb-3 bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-950/30 dark:to-yellow-950/30">
+      <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
@@ -187,7 +187,7 @@ const ChallengeCard: React.FC<{
         </div>
 
         {/* Dates - More compact */}
-        <div className="text-xs text-muted-foreground/70 pt-1 border-t">
+        <div className="text-xs text-muted-foreground/70 pt-1">
           <span>Created: {formatDate.short(challenge.createdAt)}</span>
           <span className="mx-2">•</span>
           <span>Updated: {formatDate.short(challenge.updatedAt || challenge.createdAt)}</span>
@@ -217,7 +217,7 @@ export const ChallengeManageClient: React.FC<ChallengeManageClientProps> = ({
 
   // UI state
   const [searchQuery, setSearchQuery] = React.useState(searchParams.get('search') || '')
-  const [difficultyFilter, setDifficultyFilter] = React.useState<string>(searchParams.get('difficulty') || 'all')
+  const [difficultyFilter, setDifficultyFilter] = React.useState<string>(searchParams.get('difficulty') || '')
   const [searchLoading, setSearchLoading] = React.useState(false)
   const [success, setSuccess] = React.useState<string | null>(null)
   const [error, setError] = React.useState<string | null>(null)
@@ -226,21 +226,25 @@ export const ChallengeManageClient: React.FC<ChallengeManageClientProps> = ({
   // Actions
   const { loading, updateChallengeStatus, deleteChallenge } = useChallengeActions()
 
+  // Fetch initial challenges on mount
+  React.useEffect(() => {
+    fetchChallenges(searchQuery, difficultyFilter, 1)
+  }, [])
+
   // Simple search function
   const fetchChallenges = async (searchTerm: string = '', difficulty: string = '', page: number = 1) => {
     setSearchLoading(true)
     setError(null)
     
     try {
-      const params = new URLSearchParams({
-        page: page.toString()
-      })
+      const params = new URLSearchParams()
+      params.set('page', page.toString())
       
       if (searchTerm.trim()) {
         params.set('search', searchTerm.trim())
       }
 
-      if (difficulty && difficulty !== '') {
+      if (difficulty && difficulty !== '' && difficulty !== 'all') {
         params.set('difficulty', difficulty)
       }
 
@@ -254,10 +258,9 @@ export const ChallengeManageClient: React.FC<ChallengeManageClientProps> = ({
       
       setChallenges(result.challenges || [])
       setPagination(result.pagination || {
-        page: 1,
-        limit: 3,
-        total: 0,
-        totalPages: 0,
+        currentPage: 1,
+        totalPages: 1,
+        totalCount: 0,
         hasNext: false,
         hasPrev: false
       })
@@ -356,7 +359,10 @@ export const ChallengeManageClient: React.FC<ChallengeManageClientProps> = ({
 
   return (
     <div className="min-h-screen bg-background">
-      <DashboardNav />
+      <DashboardNav 
+        userEmail={authUser.email}
+        userImage={authUser.user_metadata?.avatar_url}
+      />
 
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
@@ -431,7 +437,7 @@ export const ChallengeManageClient: React.FC<ChallengeManageClientProps> = ({
 
                 {/* Difficulty Filter */}
                 <div className="flex flex-col gap-2">
-                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400">{t("challenges.difficulty")}</p>
+                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400">{t("challenges.difficultyy")}</p>
                   <select
                     value={difficultyFilter}
                     onChange={(e) => handleDifficultyChange(e.target.value)}
