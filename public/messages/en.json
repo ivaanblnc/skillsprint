@@ -93,6 +93,7 @@
       "difficulty_level": "Difficulty Level"
     },
     "searchPlaceholder": "Search challenges...",
+    "difficultyy": "Difficulty",
     "selectDifficulty": "Select difficulty",
     "showingResults": "Showing {{count}} of {{total}} results",
     "details": {

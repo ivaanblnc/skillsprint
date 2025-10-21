@@ -46,7 +46,7 @@ export default async function ProfilePage() {
       redirect("/auth/login")
     }
 
-    // Get translations
+    // Get translation
     const messages = await getMessages()
 
     return (
